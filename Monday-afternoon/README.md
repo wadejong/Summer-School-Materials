@@ -1,0 +1,752 @@
+---
+title: "Intro to OpenMP"
+---
+
+## Example 1
+
+~~~
+$ cd example1
+~~~
+{: .bash}
+
+If you open `example1.cpp` with a text editor, you will see that it is a simple Hello World code.
+
+~~~
+#include <stdio.h>
+
+void main()
+{
+  printf("Hello World\n");
+}
+~~~
+
+Go ahead and build the code.
+
+~~~
+$ make
+~~~
+{: .bash}
+
+You could run the code just by typing `example1` into the command line, but there is also a simple script that does the same thing.
+Run the script now.
+
+~~~
+$ run.sh
+~~~
+{: .bash}
+
+~~~
+Hello World!
+~~~
+{: .output}
+
+We will now turn this into a multi-threaded code.
+To use OpenMP, you will need to add `#include <omp.h>` to the beginning of your code.
+
+Then, you can add OpenMP parallelization through the use of a compiler directive, which is any line that begins with `#pragma` (short for "pragmatic information").
+The directive `#pragma omp parallel` tells the compiler that the next block of code should be parallelized using OpenMP.
+We are going to parallelize the line with the `printf`, so put curly brackets around that line in order to make it a distinct block of text, then put `#pragma omp parallel` before the block.
+Your code should look like:
+
+~~~
+#include <stdio.h>
+#include <omp.h>
+
+void main()
+{
+#pragma omp parallel
+  {
+    printf("Hello World\n");
+  }
+}
+~~~
+
+We need to tell the compiler that we are using OpenMP.
+Open `Makefile` and add the `-qopenmp` flag to `CXXFLAGS`:
+
+~~~
+CXXFLAGS = -xHOST -O3 -ipo -no-prec-div -fp-model fast=2 -qopenmp
+~~~
+
+Go ahead and rebuild the code.
+
+~~~
+$ make
+~~~
+{: .bash}
+
+Before running the code, we should also specify how many OpenMP threads we want to run on.
+This is something that you decide at run-time, by setting a special system variable called `OMP_NUM_THREADS`.
+Add a line to `run.sh` so that it sets `OMP_NUM_THREADS` to 4:
+
+~~~
+export OMP_NUM_THREADS=4
+./example1
+~~~
+
+Now let's run the code:
+
+~~~
+$ run.sh
+~~~
+{: .bash}
+
+~~~
+Hello World!
+Hello World!
+Hello World!
+Hello World!
+~~~
+{: .output}
+
+The code prints `Hello World!` four times, but obviously this isn't because of any `for` loop.
+Each of the four OpenMP threads that we specified with `OMP_NUM_THREADS` executes the `printf` call independently.
+
+We will now edit the code so that each time `Hello World!` is printed we are told which of the threads is responsible.
+Open `example1.cpp` and edit code to read:
+
+~~~
+#include <stdio.h>
+#include <omp.h>
+
+void main()
+{
+#pragma omp parallel
+  {
+    int thread_id = omp_get_thread_num();
+    printf("Hello World! (%i)\n", thread_id);
+  }
+}
+~~~
+{: .bash}
+
+Compile and run the code:
+
+~~~
+$ make
+$ run.sh
+~~~
+{: .bash}
+
+~~~
+Hello World! (2)
+Hello World! (3)
+Hello World! (1)
+Hello World! (0)
+~~~
+{: .output}
+
+Run the code a few more times, and you will find that the order in which the threads print their message isn't always the same.
+This is because all of the threads run simultaneously, and depending on largely random factors some will finish slightly before others.
+The order in which the threads finish determines the order in which the messages are printed.
+
+Let's play around with these threads some more.
+We will add another `printf` after the OpenMP-parallelized block, followed by a third `printf` inside a new OpenMP-parallelized block.
+
+~~~
+#include <stdio.h>
+#include <omp.h>
+
+void main()
+{
+#pragma omp parallel
+  {
+    int thread_id = omp_get_thread_num();
+    printf("Hello World! (%i)\n", thread_id);
+  }
+
+  int thread_id = omp_get_thread_num();
+  printf("This is another message! (%i)\n", thread_id);
+
+#pragma omp parallel num_threads(3)
+  {
+    int thread_id = omp_get_thread_num();
+    printf("Goodbye World! (%i)\n", thread_id);
+  }
+}
+~~~
+
+If you compile and run this code, you should get something like
+
+~~~
+Hello World! (2)
+Hello World! (0)
+Hello World! (1)
+Hello World! (3)
+This is another message! (0)
+Goodbye World! (0)
+Goodbye World! (1)
+Goodbye World! (2)
+~~~
+{: .output}
+
+The following happens when the code is run:
+
+   1. The code begins executing sequentially, with only the "master thread" running.
+   2. When the master thread encounters an OpenMP-parallelized block, it `forks`, causing a number of threads equal to OMP_NUM_THREADS to begin executing.
+   3. At the end of the OpenMP-parallelized block, the threads are all `joined` to the master thread, and sequential execution is resumed.
+   4. The second `printf` is executed by only the master thread.
+   5. The master thread again forks, but only creates a total of three threads. 
+   6. All of the threads print a new line, and then are joined again.
+
+https://en.wikipedia.org/wiki/Fork%E2%80%93join_model#/media/File:Fork_join.svg
+
+## Example 2
+
+We will now work on Example 2.
+
+~~~
+$ cd ../example2
+~~~
+{: .bash}
+
+In this directory is a code that does some simple math on some arrays, and then prints the average of the result:
+
+~~~
+$ make
+$ run.sh
+~~~
+{: .bash}
+
+~~~
+Average: 500000001.500000
+~~~
+{: .output}
+
+We would like to improve the speed of this calculation through parallelization.
+Before doing any sort of optimizations on a code, we should learn about which parts of the calculation are the most expensive - otherwise, we might waste our time parallelizing a part of the code that already doesn't take long to run, while ignoring much more costly parts of the code.
+The most basic information we need is the time it takes to run each different part of the code.
+To learn this, we will add some extra code to time each calculation.
+
+Open `example2.cpp` using a text editor, and add the following to the beginning of `main`:
+
+~~~
+  double start_time = omp_get_wtime();
+~~~
+
+Now add the following to the end of main:
+
+~~~
+  printf("Total time: %f",omp_get_wtime()-start_time);
+~~~
+
+The code should now output the total about of time required to run:
+
+~~~
+Average: 500000001.500000
+Total time: 16.082229
+~~~
+{: .output}
+
+Add similar timing statements around each of the `for` loops.
+This should produce output similar to the following:
+
+~~~
+Initialize a time: 1.100083
+Initialize b time: 2.558985
+Add arrays time: 0.731854
+Average result time: 0.901738
+
+Average: 500000001.500000
+Total time: 5.338318
+~~~
+{: .output}
+
+Let's start by parallelizing the loop that adds arrays `a` and `b`.
+
+~~~
+  for (int i=0; i<N; i++) {
+    a[i] = a[i] + b[i];
+  }
+~~~
+
+INSERT MANUAL PARALLELIZATION
+
+A much easier way to parallelize this loop is to say:
+
+~~~
+#pragma	omp parallel for
+  for (int i=0; i<N; i++) {
+    a[i] = a[i] + b[i];
+  }
+~~~
+
+~~~
+Add arrays time: 0.406463
+~~~
+{: .output}
+
+Now we will parallelize the loop that averages the result.
+
+~~~
+  for (int i=0; i<N; i++) {
+    average += a[i];
+  }
+  average = average/double(N);
+~~~
+
+~~~
+Initialize a time: 1.081612
+Initialize b time: 2.550393
+Add arrays time: 0.393584
+Average result time: 0.232804
+
+Average: 31250000.375000
+Total time: 4.303908
+~~~
+{: .output}
+
+This made the loop finish more quickly, but it also changed the final result.
+What happened?
+A strong hint comes from the fact that this result is the same thing we would get if we summed only the first 1/4 of the elements in array `a`.
+The problem is that each thread works on its own copy of the `average` variable.
+We want the loop to calculate the total value of `average`, summed across all threads.
+This is known as a reduction operation, and we can tell the compiler that this is what we want by adding a `reduction` clause to the `pragma`:
+
+~~~
+#pragma omp parallel for reduction(+:average)
+  for (int i=0; i<N; i++) {
+    average += a[i];
+  }
+  average = average/double(N);
+~~~
+
+~~~
+Initialize a time: 1.084566
+Initialize b time: 2.557586
+Add arrays time: 0.400930
+Average result time: 0.233017
+
+Average: 500000001.500000
+Total time: 4.321464
+~~~
+{: .output}
+
+We've made some nice improvements to a couple of the loops, but the real bottlenect happens when `a` and `b` are initialized.
+We will now work on the loop that initializes `a`.
+Start by adding an OpenMP pragma:
+
+~~~
+#pragma	omp parallel for
+  for (int i=0; i<N; i++) {
+    a[i] = 1.0;
+  }
+~~~
+
+~~~
+Initialize a time: 1.598507
+Initialize b time: 2.556661
+Add arrays time: 0.347225
+Average result time: 0.234209
+
+Average: 500000001.500000
+Total time: 4.783023
+~~~
+{: .output}
+
+Now do the same thing to b:
+
+~~~
+#pragma	omp parallel for
+  for (int i=0; i<N; i++) {
+    b[i] = 1.0 + double(i);
+  }
+~~~
+
+~~~
+Initialize a time: 1.566816
+Initialize b time: 2.760745
+Add arrays time: 0.346645
+Average result time: 0.233726
+
+Average: 500000001.500000
+Total time: 4.953596
+~~~
+{: .output}
+
+NOTE THAT EVEN THE LAST TWO LOOPS ARE FASTER NOW.  TALK ABOUT FIRST TOUCH.
+
+## Example 3
+
+Now we will look at Example 3.
+
+~~~
+$ cd ../example3
+~~~
+{: .bash}
+
+Compiling and running this code should produce something like the following:
+
+~~~
+$ make
+$ run.sh
+~~~
+{: .bash}
+
+~~~
+Iteration: 999      Energy: 92079.129718      PE: 16253.127101
+
+Timings:
+   Force Zero:      0.002891
+   Force Calc:      27.761795
+   Velocity Update: 0.002919
+   Coords Update:   0.002996
+   Total:           27.837919
+~~~
+{: .output}
+
+Clearly, the most expensive part of the code is the region where the forces are calculated, which consists of a double loop over all particles.
+
+~~~
+  start_loop = omp_get_wtime();
+  double v = 0.0;
+  for (int i=0; i < natoms; i++) {
+    for (int j=i+1; j < natoms; j++) {
+      double dx = coords[j][0] - coords[i][0];
+      double dy = coords[j][1] - coords[i][1];
+      double dr2 = dx*dx + dy*dy;
+      double dr = sqrt(dr2);
+      double fx = (dx/dr)*(1.0/dr2);
+      double fy = (dy/dr)*(1.0/dr2);
+      forces[i][0] -= fx;
+      forces[i][1] -= fy;
+      forces[j][0] += fx;
+      forces[j][1] += fy;
+      v += 1.0/dr;
+    }
+  }
+  *potential = v;
+~~~
+
+One approach to speeding this code up would be to add OpenMP parallelization to the inner loop, like this:
+
+~~~
+  for (int i=0; i < natoms; i++) {
+#pragma omp parallel for reduction(+:v)
+    for (int j=i+1; j < natoms; j++) {
+       ...
+    }
+  }
+~~~
+
+~~~
+Iteration: 999      Energy: 211062.450046      PE: 5124.896336
+
+Timings:
+   Force Zero:      0.003662
+   Force Calc:      105.411667
+   Velocity Update: 0.004905
+   Coords Update:   0.004812
+   Total:           105.493340
+~~~
+{: .output}
+
+Unfortunately, this change causes the entire calculation to slow down substantially.
+Worse, the simulation no longer produces the same results!
+
+To understand why the results are different, look closely at how this loop updates the forces.
+In the innermost loop is the line `forces[i][0] -= fx;`, which tells the computer "Copy the value of `forces[j][0]` from memory and store it in cache, then subtract `fx` from it, then replace the value of `forces[i][0]` in memory with the result.
+When we run with multiple threads, different threads may be attempting to update 'forces[i][0]' at the same time.
+If one thread copies the value of `forces[i][0]` into cache, then another thread updates it while the first thread is doing the subtration operation, the outcome will be that the first thread overwrites the update.
+This scenario is known as a `race condition`, and happens any time two threads try to edit the same data at the same time.
+If you run this calculation several times, you will get slightly different results each time depending on the order in which the threads "race" to update the forces.
+
+One way to eliminate the race condition is to switch from looping over "unique pairs" to looping over "all pairs."
+This way, we don't need to update `forces[i][0]` at all, only `forces[j][0]`.
+The modified code looks like:
+
+~~~
+  double v = 0.0;
+  for (int i=0; i < natoms; i++) {
+#pragma omp parallel for reduction(+:v)
+    for (int j=0; j < natoms; j++) {
+      if (i != j ) {
+        double dx = coords[j][0] - coords[i][0];
+        double dy = coords[j][1] - coords[i][1];
+        double dr2 = dx*dx + dy*dy;
+        double dr = sqrt(dr2);
+        double fx = (dx/dr)*(1.0/dr2);
+        double fy = (dy/dr)*(1.0/dr2);
+	//forces[i][0] -= fx;
+	//forces[i][1] -= fy;
+        forces[j][0] += fx;
+        forces[j][1] += fy;
+        v += 0.5/dr;
+      } 
+    }
+  }
+  *potential = v;
+~~~
+
+The main differences here are: (1) we changed the starting value of `j` from `i+1` to `0`, (2) we commented out the updates to `forces[i]`, (3) we multiple all contributions to `v` by `0.5` to avoid a double-counting error, and (4) we add an `if` check to avoid the `i == j` case.
+This code produces the correct result while also being substantially faster.
+
+~~~
+Iteration: 999      Energy: 92079.129718      PE: 16253.127101
+
+Timings:
+   Force Zero:      0.003209
+   Force Calc:      11.333533
+   Velocity Update: 0.004574
+   Coords Update:   0.006350
+   Total:           11.412276
+~~~
+{: .output}
+
+That having been said, we can probably do somewhat better.
+Every time the code enters an OpenMP-threaded region, the master thread must perform a `fork` (and later a `join`).
+Because of this, there is an overhead cost every time the code encounters an OpenMP-parallelized region; the exact amount of overhead can vary, but it is usually on the order of 1 microsecond.
+Think for a moment about how much time the code spends each time it enters our OpenMP region.
+The total amount of time our code spends calculating the forces is 11.4 seconds, and the code enters the OpenMP region a number of times equal to the number of atoms times the number of iterations.
+This works out to approximately 7 microseconds spent inside the OpenMP region each time it is called.
+That isn't ideal - it is likely that a decent amount of that time is just `fork`/`join` overhead.
+
+We can improve things by moving the parallelization to the outer loop over `i`.
+
+~~~
+#pragma omp parallel for reduction(+:v)
+  for (int i=0; i < natoms; i++) {
+    for (int j=0; j < natoms; j++) {
+        double dx = coords[j][0] - coords[i][0];
+        double dy = coords[j][1] - coords[i][1];
+        double dr2 = dx*dx + dy*dy;
+        double dr = sqrt(dr2);
+        double fx = (dx/dr)*(1.0/dr2);
+        double fy = (dy/dr)*(1.0/dr2);
+        forces[i][0] -= fx;
+        forces[i][1] -= fy;
+	//forces[j][0] += fx;
+	//forces[j][1] += fy;
+        v += 0.5/dr;
+    }
+  }
+~~~
+
+~~~
+Iteration: 999      Energy: 92079.129718      PE: 16253.127101
+
+Timings:
+   Force Zero:      0.003137
+   Force Calc:      5.993662
+   Velocity Update: 0.004461
+   Coords Update:   0.006491
+   Total:           6.072995
+~~~
+{: .output}
+
+That definitely helped - apparently the code was spending nearly half the time doing OpenMP overhead work.
+
+NOTE: Now do a scaling test.
+
+## Example 4
+
+Now we will work on a somewhat more realistic example of an MD code.
+
+~~~
+cd ../example4
+make
+run.sh
+~~~
+{: .bash}
+
+~~~
+Time step 0.03
+optim: 9.80472e+10 0.1
+optim: 3137.9 0.1
+optim: -2427.1 0.1
+optim: -3514.3 0.1
+optim: -4000.33 0.1
+optim: -4308.11 0.1
+optim: -4538.5 0.1
+optim: -4714.19 0.1
+optim: -4850.49 0.1
+optim: -4963.01 0.1
+optim: -5059.17 0.1
+optim: -5142.09 0.1
+
+    time         ke            pe             e            T          P
+  -------    -----------   ------------  ------------    ------    ------
+     3.00      739.80960    -4605.50038   -3865.69078    0.372   0.04019894 *
+     6.00      854.80325    -4663.78391   -3808.98066    0.411   0.03964152 *
+     9.00      905.18315    -4737.69185   -3832.50870    0.440   0.03866409 *
+    12.00      913.10300    -4827.40769   -3914.30469    0.442   0.03758880  
+    15.00      948.14449    -4862.46512   -3914.32064    0.458   0.03720336  
+    18.00      928.22937    -4842.54125   -3914.31187    0.471   0.03691174  
+    21.00      941.71383    -4856.04247   -3914.32864    0.468   0.03687610  
+    24.00      931.78512    -4846.10107   -3914.31595    0.481   0.03663177  
+    27.00      972.20073    -4886.54979   -3914.34907    0.478   0.03668399  
+    30.00      988.53842    -4902.87704   -3914.33862    0.488   0.03647202  
+times:  force=14.67s  neigh=6.03s  total=21.74s
+~~~
+{: .output}
+
+The code primarily consists of three sections: (1) The `neighbor_list` function, which generates a list of atom pairs that are close enough to be considered interacting, (2) a `forces` function, which calculates all contributions to the forces from the pairs in the neighbor list, and (3) the `md` function, which runs the calculation by calling `neighbor_list` and `forces` and then updating the atomic coordinates each timestep.
+
+
+Note that the force evaluation is handled via an iterator over the neighbor list:
+
+~~~
+    for (neighT::const_iterator ij=neigh.begin(); ij!=neigh.end(); ++ij) {
+       ...
+    }
+~~~
+
+Loops with iterators are a little awkward to parallelize.
+The approach we will take is to create a separate neighborlist for each thread.
+First, define a `thrneighT` type, which will be a vector of neighborlists (add this near the beginning of `md.cc`, with the other typdefs).
+
+~~~
+typedef std::vector<neighT> thrneighT;
+~~~
+
+Then create a `thrneighT` which will contain all of the neighborlists for all of the threads.
+Where appropriate, change `neighT` and `neigh` to `thrneighT` and `thrneigh`, respectively.
+Here are the locations where these changes need to be made:
+
+~~~
+void neighbor_list(const coordT& coords, thrneighT& thrneigh) {
+    double start = omp_get_wtime();
+    for (int ithr=0; ithr<thrneigh.size(); ithr++) {
+        neighT& neigh = thrneigh[ithr];
+        neigh.clear();
+        for (int i=ithr; i<natom; i+=thrneigh.size()) {
+	  ...
+	}
+        ...
+    }
+...
+coordT forces(const thrneighT& thrneigh, const coordT& coords, double& virial, double& pe) {
+...
+    for (int ithr=0; ithr<thrneigh.size(); ithr++) {
+      const neighT& neigh = thrneigh[ithr];
+      for (neighT::const_iterator ij=neigh.begin(); ij!=neigh.end(); ++ij) {
+...
+void optimize(coordT& coords, thrneighT& thrneigh) {
+    double dt = 0.1;
+    double prev = 1e99;
+    for (int step=0; step<600; step++) {
+      if ((step%(3*nneigh)) == 0 || step<10) neighbor_list(coords, thrneigh);
+        double virial,pe;
+        coordT f = forces(thrneigh,coords,virial,pe);
+...
+    // Relax the initial random guess
+    int	nthreads;
+#pragma	omp parallel
+    {
+      nthreads = omp_get_num_threads();
+    }
+    thrneighT thrneigh(nthreads);
+    optimize(coords, thrneigh);
+    neighbor_list(coords, thrneigh);
+...
+    coordT f = forces(thrneigh,coords,virial,potential_energy);
+...
+        // make the forces at time t+dt
+        if ((step%nneigh) == 0) {
+          neighbor_list(coords, thrneigh);
+        }
+
+        double virial_step;
+        f = forces(thrneigh,coords,virial_step,potential_energy);
+~~~
+
+~~~
+...
+void neighbor_list(const coordT& coords, thrneighT& thrneigh) {
+    double start = omp_get_wtime();
+    thrneighT thrneigh(omp_get_num_threads());
+    for (int ithr=0; ithr<omp_get_num_threads(); ithr++) {
+      neighT& neigh = thrneigh[ithr];
+      for (int i=0; i<natom; i++) {
+         ...
+      }
+   ...
+}
+...
+coordT forces(const thrneighT& thrneigh, const coordT& coords, double& virial, double& pe) {
+...
+    for (int ithr=0; ithr<thrneigh.size(); ithr++) {
+      const neighT& neigh = thrneigh[ithr];
+      ...
+    }
+...
+void optimize(coordT& coords) {
+    double dt = 0.1;
+    thrneighT thrneigh(omp_get_num_threads());
+    double prev = 1e99;
+    for (int step=0; step<600; step++) {
+        if ((step%(3*nneigh)) == 0 || step<10) thrneigh = neighbor_list(coords);
+        double virial,pe;
+        coordT f = forces(thrneigh,coords,virial,pe);
+...
+    // make the initial forces
+    thrneighT thrneigh = neighbor_list(coords);
+    double virial = 0.0;
+    double temp = 0.0;
+
+    double potential_energy;
+    coordT f = forces(thrneigh,coords,virial,potential_energy);
+...
+        // make the forces at time t+dt
+        if ((step%nneigh) == 0) {
+            thrneigh = neighbor_list(coords);
+        }
+...
+        f = forces(neigh,coords,virial_step,potential_energy);
+~~~
+
+We are finally ready to work on parallelization of the `forces` subroutine.
+Replacing the outer `for` loop in `forces` is easy enough:
+
+~~~
+#pragma omp parallel reduction(+:virial) reduction(+:pe)
+    {
+       int ithr = omp_get_thread_num();
+       const neighT& neigh = thrneigh[ithr];
+       ...
+    }
+~~~
+
+Unfortunately, there is one significant problem: the forces are incremented in a way that introduces a race condition.
+
+~~~
+          f[i].first += dfx;
+          f[j].first -= dfx;
+          f[i].second += dfy;
+          f[j].second -= dfy;
+~~~
+
+Unlike the case with `Example 3`, it isn't straightforward to restructure the force evaluation in such a way that the forces on each atom are calculated by only one thread.
+Instead, we will have each thread calculate some portion of the forces on all of the atoms, then perform a `reduction` operation on the forces.
+The OpenMP `reduction` clause only works for for basic data types; it won't work for our defined type `coordT`.
+As a result, we must perform the reduction manually.
+
+To reduce the forces, first declare an array that will store the forces for a single thread.
+
+~~~
+#pragma omp parallel reduction(+:virial) reduction(+:pe)
+    {
+      coordT f_thread(natom,xyT(0.0,0.0));
+      ...
+          f_thread[i].first += dfx;
+          f_thread[j].first -= dfx;
+          f_thread[i].second += dfy;
+          f_thread[j].second -= dfy;
+        ...
+	}
+      }
+    }
+~~~
+
+Then, `just before` the end of the OpenMP block, write the following:
+
+~~~
+#pragma omp critical
+      {
+        for (int i=0; i<natom; i++) {
+          f[i].first += f_thread[i].first;
+          f[i].second += f_thread[i].second;
+        }
+      }
+~~~
+
