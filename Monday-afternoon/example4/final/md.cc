@@ -26,7 +26,7 @@ double time_force, time_neigh, time_total; // Timers
 
 typedef std::pair<int,int> pairT;
 typedef std::pair<double,double> xyT;
-typedef std::list<pairT> neighT;
+typedef std::vector<pairT> neighT;
 typedef std::vector<xyT> coordT;
 typedef std::vector<neighT> thrneighT;
 
@@ -40,9 +40,14 @@ inline double periodic(double x, double L) {
 // Make the list of interacting atoms 
 void neighbor_list(const coordT& coords, thrneighT& thrneigh) {
     double start = omp_get_wtime();
-    for (int ithr=0; ithr<thrneigh.size(); ithr++) {
+    //for (int ithr=0; ithr<thrneigh.size(); ithr++) {
+#pragma omp parallel default(none) shared(thrneigh, coords)
+    {
+        int ithr = omp_get_thread_num();
+	int nthread = omp_get_num_threads();
 	neighT& neigh = thrneigh[ithr];
 	neigh.clear();
+	neigh.reserve(100*natom/nthread);
 	for (int i=ithr; i<natom; i+=thrneigh.size()) {
 	  double xi = coords[i].first;
 	  double yi = coords[i].second;
@@ -64,6 +69,29 @@ void neighbor_list(const coordT& coords, thrneighT& thrneigh) {
             }
 	  }
 	}
+#pragma omp barrier
+#pragma omp single
+	{
+	  //get the target number of pairs per thread
+          int npair=0;
+	  for (int i=0; i<nthread; i++) npair += thrneigh[i].size();
+          npair = (npair-1)/nthread + 1;
+
+	  for (int i=0; i<thrneigh.size()-1; i++) {
+	    while(thrneigh[i].size() < npair) {
+	      //steal pairs from the next thread
+	      if (thrneigh[i+1].size() == 0) break;
+	      thrneigh[i].push_back(thrneigh[i+1].back());
+	      thrneigh[i+1].pop_back();
+	    }
+	    while(thrneigh.size() > npair) {
+	      //donate pairs from the next thread
+	      if (thrneigh[i].size() == 0) break;
+	      thrneigh[i+1].push_back(thrneigh[i].back());
+	      thrneigh[i].pop_back();
+	    }
+	  }
+	}
     }
     time_neigh += omp_get_wtime() - start;
 }
@@ -80,7 +108,12 @@ coordT forces(const thrneighT& thrneigh, const coordT& coords, double& virial, d
     // F[i][x] = -dV/dxi
 
     const double fac = epsilon*12.0/(sigma*sigma);
-    for (int ithr=0; ithr<thrneigh.size(); ithr++) {
+#pragma omp parallel default(none) shared(f, thrneigh, coords, virial, pe)
+    {
+      coordT f_thread(natom,xyT(0.0,0.0));
+      double virial_thread = 0.0;
+      double pe_thread = 0.0;
+      int ithr = omp_get_thread_num();
       const neighT& neigh = thrneigh[ithr];
       for (neighT::const_iterator ij=neigh.begin(); ij!=neigh.end(); ++ij) {
         int i = ij->first;
@@ -111,14 +144,23 @@ coordT forces(const thrneighT& thrneigh, const coordT& coords, double& virial, d
 	  double dfx = df*dx;
 	  double dfy = df*dy;
             
-	  f[i].first += dfx;
-	  f[j].first -= dfx;
-	  f[i].second += dfy;
-	  f[j].second -= dfy;
+	  f_thread[i].first += dfx;
+	  f_thread[j].first -= dfx;
+	  f_thread[i].second += dfy;
+	  f_thread[j].second -= dfy;
             
-	  pe += vij;
-	  virial += dfx*dx + dfy*dy;
+	  pe_thread += vij;
+	  virial_thread += dfx*dx + dfy*dy;
         }
+      }
+#pragma omp critical
+      {
+        for (int i=0; i<natom; i++) {
+          f[i].first += f_thread[i].first;
+          f[i].second += f_thread[i].second;
+        }
+	pe += pe_thread;
+	virial += virial_thread;
       }
     }
     time_force += omp_get_wtime() - start;

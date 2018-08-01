@@ -650,56 +650,11 @@ void optimize(coordT& coords, thrneighT& thrneigh) {
         f = forces(thrneigh,coords,virial_step,potential_energy);
 ~~~
 
-~~~
-...
-void neighbor_list(const coordT& coords, thrneighT& thrneigh) {
-    double start = omp_get_wtime();
-    thrneighT thrneigh(omp_get_num_threads());
-    for (int ithr=0; ithr<omp_get_num_threads(); ithr++) {
-      neighT& neigh = thrneigh[ithr];
-      for (int i=0; i<natom; i++) {
-         ...
-      }
-   ...
-}
-...
-coordT forces(const thrneighT& thrneigh, const coordT& coords, double& virial, double& pe) {
-...
-    for (int ithr=0; ithr<thrneigh.size(); ithr++) {
-      const neighT& neigh = thrneigh[ithr];
-      ...
-    }
-...
-void optimize(coordT& coords) {
-    double dt = 0.1;
-    thrneighT thrneigh(omp_get_num_threads());
-    double prev = 1e99;
-    for (int step=0; step<600; step++) {
-        if ((step%(3*nneigh)) == 0 || step<10) thrneigh = neighbor_list(coords);
-        double virial,pe;
-        coordT f = forces(thrneigh,coords,virial,pe);
-...
-    // make the initial forces
-    thrneighT thrneigh = neighbor_list(coords);
-    double virial = 0.0;
-    double temp = 0.0;
-
-    double potential_energy;
-    coordT f = forces(thrneigh,coords,virial,potential_energy);
-...
-        // make the forces at time t+dt
-        if ((step%nneigh) == 0) {
-            thrneigh = neighbor_list(coords);
-        }
-...
-        f = forces(neigh,coords,virial_step,potential_energy);
-~~~
-
 We are finally ready to work on parallelization of the `forces` subroutine.
 Replacing the outer `for` loop in `forces` is easy enough:
 
 ~~~
-#pragma omp parallel reduction(+:virial) reduction(+:pe)
+#pragma	omp parallel default(none) shared(f, thrneigh, coords, virial, pe)
     {
        int ithr = omp_get_thread_num();
        const neighT& neigh = thrneigh[ithr];
@@ -724,14 +679,19 @@ As a result, we must perform the reduction manually.
 To reduce the forces, first declare an array that will store the forces for a single thread.
 
 ~~~
-#pragma omp parallel reduction(+:virial) reduction(+:pe)
+#pragma	omp parallel default(none) shared(f, thrneigh, coords, virial, pe)
     {
       coordT f_thread(natom,xyT(0.0,0.0));
+      double virial_thread = 0.0;
+      double pe_thread = 0.0;
       ...
           f_thread[i].first += dfx;
           f_thread[j].first -= dfx;
           f_thread[i].second += dfy;
           f_thread[j].second -= dfy;
+
+          pe_thread += vij;
+          virial_thread += dfx*dx + dfy*dy;
         ...
 	}
       }
@@ -747,6 +707,97 @@ Then, `just before` the end of the OpenMP block, write the following:
           f[i].first += f_thread[i].first;
           f[i].second += f_thread[i].second;
         }
+	pe += pe_thread;
+	virial += virial_thread;
       }
 ~~~
 
+Running on four threads, this gives substantially improved performance for the forces:
+
+~~~
+times:  force=3.66s  neigh=7.00s  total=10.82s
+~~~
+{: .output}
+
+Now let's work on the `neighbor_list` function.
+Once again, we will convert the `for` loop over `thrneigh` into an OpenMP parallelized region.
+
+~~~
+#pragma omp parallel default(none) shared(thrneigh, coords)
+    {
+        int ithr = omp_get_thread_num();
+	int nthread = omp_get_num_threads();
+	...
+    }
+~~~
+
+This improves the neighborlist creation time substantially:
+
+~~~
+times:  force=3.66s  neigh=2.17s  total=5.98s
+~~~
+{: .output}
+
+Running on 64 threads, we get this:
+
+~~~
+times:  force=1.12s  neigh=0.31s  total=1.60s
+~~~
+{: .output}
+
+One issue that limits our performance at high thread counts is the fact that we are not doing anything to `load balance` the neighborlist across threads.
+We can improve the load balancing by adding some code to ensure that each thread has a neighborlist of similar length.
+Add the following just before the end of the OpenMP parallelized block in `neighbor_list`:
+
+~~~
+#pragma omp barrier
+#pragma omp single
+        {
+          //get the target number of pairs per thread                                                                                                   
+          int npair=0;
+          for (int i=0; i<nthread; i++) npair += thrneigh[i].size();
+          npair = (npair-1)/nthread + 1;
+
+          for (int i=0; i<thrneigh.size()-1; i++) {
+            while(thrneigh[i].size() < npair) {
+              //steal pairs from the next thread                                                                                                        
+              if (thrneigh[i+1].size() == 0) break;
+              thrneigh[i].push_back(thrneigh[i+1].back());
+              thrneigh[i+1].pop_back();
+            }
+            while(thrneigh.size() > npair) {
+              //donate pairs from the next thread                                                                                                       
+              if (thrneigh[i].size() == 0) break;
+              thrneigh[i+1].push_back(thrneigh[i].back());
+              thrneigh[i].pop_back();
+            }
+          }
+        }
+~~~
+
+Unfortunately, this really doesn't help our timings:
+
+~~~
+times:  force=1.30s  neigh=57.78s  total=59.25s
+~~~
+{: .output}
+
+The problem is that the added code does lots of operations that resize the neighborlists, which is a slow operation on a C++ `list` type.
+To fix this, change the `neighT` type to be a vector:
+
+~~~
+typedef std::vector<pairT> neighT;
+~~~
+
+Then, add the following to the `neighbor_list` function, just after the `neigh.clear();` line:
+
+~~~
+        neigh.reserve(100*natom/nthread);
+~~~
+
+These changes allow us to get our best timings yet:
+
+~~~
+times:  force=1.22s  neigh=0.12s  total=1.47s
+~~~
+{: .output}
