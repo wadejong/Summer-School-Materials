@@ -74,9 +74,9 @@ int main(int argc, char *argv[]) {
     timer_off("Nuclear Repulsion Energy");
 
     /* Have the user input some key data */
-    int nao;
-    printf("\nEnter the number of AOs: ");
-    scanf("%d", &nao);
+    int nao=7;
+    // printf("\nEnter the number of AOs: ");
+    // scanf("%d", &nao);
 
     /* overlap integrals */
     double **S = read_1e_ints("s.dat", nao);

@@ -36,7 +36,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <ctime>
-#include <sys/param.h>
+//#include <sys/param.h>
 #include <sys/times.h>
 
 /* guess for HZ, if missing */
