@@ -1,6 +1,6 @@
-CXX = g++
+CXX = icpc
 CXXFLAGS = -g -Wall
-CXXLIBS = -L/home/crawdad/lib -llapack3 -lblas3 -lgfortran
+CXXLIBS = -mkl
 
 scf: scf.o diag.o mmult.o
 	$(CXX) $^ $(CXXLIBS) -o $@

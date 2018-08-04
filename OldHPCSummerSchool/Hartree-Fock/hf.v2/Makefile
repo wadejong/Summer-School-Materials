@@ -1,7 +1,8 @@
-EIGENPATH = /gpfs/software/eigen-eigen-6b38706d90a9
+#EIGENPATH = /gpfs/software/eigen-eigen-6b38706d90a9
+EIGENPATH = /gpfs/projects/molssi/install/include
 
-CXX = g++
-CXXFLAGS = -std=c++11 -g -Wall -Wno-deprecated-register
+CXX = icpc
+CXXFLAGS = -std=c++11 -g -Wall
 CPPFLAGS = -I$(EIGENPATH)
 
 scf: scf.o

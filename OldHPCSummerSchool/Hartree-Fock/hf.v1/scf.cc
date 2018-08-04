@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
 
     /* Have the user input some key data */
     int nao;
-    printf("\nEnter the number of AOs: ");
+    printf("\nEnter the number of AOs (enter 7 unless U have manually reset links): ");
     scanf("%d", &nao);
 
     /* overlap integrals */

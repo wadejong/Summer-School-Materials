@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
     cout << "\tNuclear repulsion energy = " << enuc << endl;
 
     // ask the user for # of AOs
-    cout << "\nEnter the number of AOs: ";
+    cout << "\nEnter the number of AOs (7 unless U have updated the links): ";
     size_t nao;
     std::cin >> nao;
 
