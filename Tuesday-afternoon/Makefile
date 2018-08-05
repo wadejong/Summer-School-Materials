@@ -1,7 +1,13 @@
 CXX = mpicxx
 CXXFLAGS = -g
 
-all: hello mpihello
+TARGETS = hello mpihello sendrecv99
+
+all: $(TARGETS)
+
+clean:
+	/bin/rm $(TARGETS) *.o *~
+
 
 
 
