@@ -13,4 +13,4 @@ scf: scf.cc
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) scf.cc -o scf $(LDFLAGS)
 
 clean:
-	rm -f *.o scf
+	rm -f *.o scf *~
