@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <omp.h>
 
-void main()
+int main()
 {
 #pragma omp parallel
   {
@@ -17,4 +17,6 @@ void main()
     int thread_id = omp_get_thread_num();
     printf("Goodbye World! (%i)\n", thread_id);
   }
+
+  return 0;
 }

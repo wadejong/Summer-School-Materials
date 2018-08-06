@@ -4,7 +4,7 @@
 
 int N = 1000000000;
 
-void main()
+int main()
 {
 
   //declare two arrays
@@ -17,9 +17,8 @@ void main()
   }
 
   //initialize b
-  b[0] = 1.0;
-  for (int i=1; i<N; i++) {
-    b[i] = b[i-1] + 1.0;
+  for (int i=0; i<N; i++) {
+    b[i] = 1.0 + double(i);
   }
 
   //add the two arrays
@@ -39,4 +38,6 @@ void main()
 
   delete(a);
   delete(b);
+
+  return 0;
 }
