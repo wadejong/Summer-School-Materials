@@ -19,14 +19,16 @@
 
 Motivations:
 * Performance
+
 * Price-performance
+
 * Correctness
 
 The only cost-effective path to massive performance is connecting together multiple commodity computers via a high-performance network.  In present technologies each computer will contain multiple CPUs (cores) that share memory. They might also contain GPUs or other accelerators.
 
 ![distmem](images/hybrid_mem.gif  "Distributed memory")
 
-We wish to program this cluster of computers to collaborate in the solution of a single science problem.  The challenge is that the processes do not share any memory (the memory and the data it contains is distributed across the cluster), and potentially not even a file system.  This is a classic problem in concurrent systems, and the communicating sequential processes (CSP; see references below) model provides rigorous solution with provable properties.
+We wish to program this cluster of computers to collaborate in the solution of a single science problem.  The challenge is that the processes do not share any memory (the memory and the data it contains is distributed across the cluster), and potentially not even a file system.  This is a classic problem in concurrent systems, and the communicating sequential processes (CSP; see references below) model provides a rigorous solution with provable properties.
 
 The essential idea is exactly how a team of humans distributed across the planet would solve a problem via email --- they would send messages to each other or the whole team until everyone had the data they needed to solve their part of the problem.  Partial or full results would be similarly communicated.  By formalizing this approach and introducing concepts such as ordering and message types, CSP enables certain styles of writing message programs to be proven to be correct and safe (such as in the sense of needing bounded buffers).
 
@@ -40,21 +42,23 @@ The objective of this brief tutorial is to introduce key elements of MPI and its
 
 References:
 * CSP --- https://en.wikipedia.org/wiki/Communicating_sequential_processes
+
 * CSP --- http://www.usingcsp.com/cspbook.pdf
+
 * MPI standard --- https://www.mpi-forum.org/docs/
 
 
 ## 3. Useful links
 
-https://www.mpich.org/static/docs/v3.2/
+* [MPI interface](https://www.mpich.org/static/docs/v3.2/)
 
-https://computing.llnl.gov/tutorials/mpi/
+* [MPI tutorial](https://computing.llnl.gov/tutorials/mpi/) from LLNL --- excellent, thorough with good links
 
-https://htor.inf.ethz.ch/teaching/mpi_tutorials/ppopp13/2013-02-24-ppopp-mpi-basic.pdf
+* [MPI tutorial](https://htor.inf.ethz.ch/teaching/mpi_tutorials/ppopp13/2013-02-24-ppopp-mpi-basic.pdf) --- MPI for dummies
 
-https://software.intel.com/en-us/intel-mpi-library/documentation
+* [Intel MPI](https://software.intel.com/en-us/intel-mpi-library/documentation) documentation
 
-https://software.intel.com/en-us/cpp-compiler-18.0-developer-guide-and-reference
+* [Intel C++](https://software.intel.com/en-us/cpp-compiler-18.0-developer-guide-and-reference) compiler documentation
 
 
 ## 3. Hello world 
@@ -66,8 +70,7 @@ https://software.intel.com/en-us/cpp-compiler-18.0-developer-guide-and-reference
 3. MPI interface convention and errors
 4. Communicators
 5. Process rank
-6. Running
-    * Interactively and in batch
+6. Running interactively and in batch
 
 ### Writing hello world
 
@@ -219,7 +222,6 @@ Useful PBS/Torque commands are
 
 ##  4. Sending and receiving messages --- point to point communication
 
-
 ### Essential elements
 1. Process rank, message tag, MPI data type, communicator size
 2. Blocking communication
@@ -348,9 +350,11 @@ Write a program to send an integer (`=99`) around a ring of processes (i.e., `0`
 *  Synchronous send --- completes on the sender-side when the receive has also completed
 *  Ready send --- if you know a matching receive has already been posted this enables optimizations (and this style of programming is explicitly safe from memory/buffer issues)
 
+
 ### One-sided operations
 
 **to be added**
+
 
 ## 5. Global operations
 
@@ -386,7 +390,32 @@ Or eight if you include
 
 ##  6. Reasoning about performance
 
-**to be added**
+Essential concepts to reason about the performance of your message passing application
+
+* Amdahl's law
+
+* Speed up and efficiency
+
+* Load balance
+
+* Data balance
+
+* Data distribution
+
+* Latency and bandwidth of communication
+
+
+### Amdahl's law
+
+[Ahdahl's law](https://en.wikipedia.org/wiki/Amdahl%27s_law) is both simple and brutal.  Dividing the execution time into a sequential component
+
+
+
+
+<img src="https://latex.codecogs.com/svg.latex?\Large&space;x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}" title="\Large x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}" />
+
+
+
 
 
 ##  Debugging, etc.
