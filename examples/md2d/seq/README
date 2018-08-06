@@ -1,0 +1,3 @@
+A simple molecular dynamics program for a 2D gas/liquid/solid of
+Lennard-Jones particles using a neighbor list and cutoff to accelerate
+the computation.
