@@ -409,7 +409,7 @@ Essential concepts to reason about the performance of your message passing appli
 
 [Ahdahl's law](https://en.wikipedia.org/wiki/Amdahl%27s_law) is both simple and brutal.  Dividing the execution time into a sequential component (*Ts*) and perfectly parallel program (*Tp*) the execution time on *P* processes is then
 
-<img src="https://latex.codecogs.com/svg.latex?\Large&space;T(P)=Ts + \frac{Tp}{P}" title="Amdahl" />
+<img src="https://latex.codecogs.com/svg.latex?\Large&space;T(P)=Ts+\frac{Tp}{P}" title="Amdahl" />
 
 
 
