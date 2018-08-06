@@ -6,7 +6,7 @@ TARGETS = hello mpihello sendrecv99 ring exchange1
 all: $(TARGETS)
 
 clean:
-	/bin/rm $(TARGETS) *.o *~
+	/bin/rm -f $(TARGETS) *.o *~
 
 
 

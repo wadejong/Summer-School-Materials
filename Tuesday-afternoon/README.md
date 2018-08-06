@@ -52,6 +52,10 @@ https://computing.llnl.gov/tutorials/mpi/
 
 https://htor.inf.ethz.ch/teaching/mpi_tutorials/ppopp13/2013-02-24-ppopp-mpi-basic.pdf
 
+https://software.intel.com/en-us/intel-mpi-library/documentation
+
+https://software.intel.com/en-us/cpp-compiler-18.0-developer-guide-and-reference
+
 
 ## 3. Hello world 
 
@@ -148,16 +152,69 @@ but more likely will look something like
     Hello from process 0 of 4
 ~~~
 
-We used four processes on the local machine (e.g., your laptop or the cluster login node).  More typically, we want to use multiple computers and most clusters use a batch system to
+We used four processes on the local machine (e.g., your laptop or the cluster login node).  More typically, we want to use multiple computers.  You can manually provide to `mpirun` a hostfile that tells it which computers to use --- on most clusters this is rarely necessary since a batch system is used to
 * time share the computers in the cluster
 * queue jobs according to priority, resource needs, etc.
 
-**EXAMPLE BATCH JOB HERE**
 
-You can also provide to `mpirun` a hostfile that tells it which computers to use --- on most clusters this is rarely necessary.
+Here's an example batch job (`mpihello.pbs`) for SeaWulf annotated so show what is going on:
+~~~
+    #!/bin/bash
+    #PBS -l nodes=2:ppn=24,walltime=00:02:00
+    #PBS -q molssi
+    #PBS -N hello
+    #PBS -j oe
 
+    # Above says:
+    # - job has 2 (dedicated) nodes with 24 processes per node with a 2 minute max runtime
+    # - use the molssi queue
+    # - name the job "hello"
+    # - merge the standard output and error into one file
 
-### Some mpirun options
+    # Output should appear in the file "<jobname>.o<jobnumber>" in the
+    # directory from which you submitted the job
+
+    # ================================================
+    # If this is not in your .bashrc it needs to be here so that your job
+    # uses the same compilers/libraries that you compiled with
+    source /gpfs/projects/molssi/modules-intel
+
+    # This will change to the directory from which you submitted the job
+    # which we assume below is the one holding the executable
+    cd $PBS_O_WORKDIR
+
+    # Uncomment this if you want to see other PBS environment variables
+    # env | grep PBS
+
+    # Finally, run the executable using $PBS_NUM_NODES*$PBS_NUM_PPN
+    # processes spread across all the nodes
+    mpirun ./mpihello
+
+    # You can run more things below
+~~~
+But I find the comments very distracting, so here is a minimal version:
+~~~
+    #!/bin/bash
+    #PBS -l nodes=2:ppn=24,walltime=00:02:00
+    #PBS -q molssi -N hello -j oe
+
+    source /gpfs/projects/molssi/modules-intel
+    cd $PBS_O_WORKDIR
+    mpirun ./mpihello
+~~~
+You can copy and edit the file for your other jobs.  Note that other other systems running PBS will differ.
+
+Submit the job from the directory holding your executable (or modify the batch script to use the full path to your executable)
+~~~
+    qsub mpihello.pbs
+~~~
+
+Useful PBS/Torque commands are
+* `qstat` --- see all queued/running jobs
+* `qstat -u <username>` --- to see just your jobs
+* `qstat -f <jobid?>` --- to see detailed info about a job
+* `qstat -Q` and `qstat -q` --- to see info about batch queues (for the summer school only `molssi` is available)
+* `qdel <jobid>` --- to cancel a job
 
 
 ##  4. Sending and receiving messages --- point to point communication
