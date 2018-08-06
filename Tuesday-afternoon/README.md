@@ -428,7 +428,9 @@ Further limiting performance is the assumption of perfect parallelism.  It can b
 
 Data distribution can also be a challenge.  The finite memory of each node is one constraint.  Another is that all of the data needed by a task must be brought together for it to be executed.  A non-uniform data distribution can also lead to communication hot spots (processors that must send/recv a lot of data) or hot links (wires in the network that are heavily used to transmit data).  This last point highlights the role of network topology --- the communication pattern of your application is mapped onto the wiring pattern (toplogy) of your network.  A communication intensive application may be sensive to this mapping, and MPI provides some assistance for this (e.g., see [here](http://wgropp.cs.illinois.edu/courses/cs598-s16/lectures/lecture28.pdf)).  See also bisection bandwidth below.
 
-### Latency, bandwidth, 
+The performance impact of load balance will become apparent at synchronization points (e.g., blocking global communications) where all processes must wait for the slowest one to catch up.
+
+### Latency and bandwidth
 
 For point-to-point communication, the central concepts are latency (*L*, the time in seconds for a zero-length message) and bandwidth (*B*, speed of data transfer in bytes/second).  These enable us to model the time to send a message of *N* bytes as
 
@@ -436,11 +438,15 @@ For point-to-point communication, the central concepts are latency (*L*, the tim
 
 For typical modern computers *L*=1-10us and *B*=10-50Gbytes/s.  It is hard to accurately measure the latency since on modern hardware the actual cost can depend upon what else is going on in the system and upon your communication pattern.  The bandwidth is a bit easier to measure by sending very large messages, but it can still depend on communication pattern and destination.
 
-An important number is *N1/2* which is the length of a message to obtain 50% of peak speed.  This is readily derived to be
+An important and easy to remember value is *N1/2*, which is the message length necessary to obtain 50% of peak bandwidth (i.e., *T(N)=2N/B*)
 
-<img src="https://latex.codecogs.com/svg.latex?\Large&space;N<sub>1/2</sub>=L B" title="Nhalf" />
+<img src="https://latex.codecogs.com/svg.latex?\Large&space;N_{1/2}=LB" title="Nhalf" />
 
+Inserting *L*=10us and *B*=10Gbyte/s, we obtain *N1/2*=100000bytes.  For many science applications this is a long message.  You can derive similar a similar formula for the length necessary to acheive 90% peak bandwith.
 
+Bisection bandwidth is another important concept.  Divide your parallel machine in two halves so as to give the worst possible bandwidth connecting the halves.  This is the bisection bandwidth, which you can derive by counting the number of wires that you cut.  If your communication pattern is not local but is uniform and does not have any hot spots (think uniform and random), your effective bandwidth is the bisection bandwidth divided by the number of processes.  This can be much smaller than the bandwidth obtained by a single message on a quiet machine.  Thus, the communication intensity of your application is important.  Spreading communication over larger period of time is a possible optimization.
+
+For global communication, the details are more complicated because a broadcast or reduction is executed on an MPI-implementation-specific tree of processes that is mapped to the underlying network topology.  However, for long messages an optimized implementation should be able to deliver similar bandwidth to that of the point-to-point communication, with a latency that grows roughly logarithmically with the number of MPI processes.
 
 
 ##  Debugging
