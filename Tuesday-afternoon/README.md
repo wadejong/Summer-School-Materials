@@ -426,7 +426,7 @@ In `exercises/trapezoid_seq.cc` is a sequential program that uses the trapezoid 
 
 It repeatedly increases the number of points by a factor two until the error is satisfactory.
 
-Please make it run in parallel using MPI with process 0 responsible for choosing the number of points and deciding if the error is satisfactory (and of course telling everyone else).
+Please make it run in parallel using MPI with process responsible for deciding if the error is satisfactory (and of course telling everyone else).
 
 We will walk through the solution together since this is an important example.
 

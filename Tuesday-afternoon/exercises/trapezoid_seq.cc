@@ -22,6 +22,8 @@ int main(int argc, char** argv) {
   const double a=-6.0, b=6.0;
 
   double result_prev = integrate(1, a, b, g);
+
+  // Process 0 should communicate N to all other processes
   for (int N=2; N<=1024; N*=2) {
     double result = integrate(N, a, b, g);
     double err_prev = std::abs(result-result_prev);
