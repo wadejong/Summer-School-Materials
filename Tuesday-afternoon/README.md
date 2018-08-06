@@ -28,13 +28,15 @@ The only cost-effective path to massive performance is connecting together multi
 
 We wish to program this cluster of computers to collaborate in the solution of a single science problem.  The challenge is that the processes do not share any memory (the memory and the data it contains is distributed across the cluster), and potentially not even a file system.  This is a classic problem in concurrent systems, and the communicating sequential processes (CSP; see references below) model provides rigorous solution with provable properties.
 
-The essential idea is exactly how a team of humans distribute across the planet would solve a problem via email --- they would send messages to each other or the whole team until everyone had the data they needed to solve their part of the problem.  Partial or full results would be similarly communicated.  By formalizing this approach and introducing concepts such as ordering and message types, CSP enables certain styles of writing message programs to be proven to be correct and safe (such as in the sense of needing bounded buffers).
+The essential idea is exactly how a team of humans distributed across the planet would solve a problem via email --- they would send messages to each other or the whole team until everyone had the data they needed to solve their part of the problem.  Partial or full results would be similarly communicated.  By formalizing this approach and introducing concepts such as ordering and message types, CSP enables certain styles of writing message programs to be proven to be correct and safe (such as in the sense of needing bounded buffers).
 
 Moreover, message-passing programs are intrinsically safer and in some sense easier to write than shared-memory programs.  In a shared-memory program any process/thread can modify any shared data at any time.  It takes substantial programmer discipline and good design to avoid race conditions and myriad other bugs and performance problems.  In contrast, in a message-passing program no data is shared and so there are no such problems.
 
-Finally, even within a shared-memory computers a message-passing program can sometimes run faster than a shared-memory program.  This is because it is expensive (in time and energy) to share data between processes and it is hard to deisgn a shared-memory program that minimizes the amount of data being touched by multiple processes.  In contrast, a message-passing program shares no data, and all memory references are local to that process.  Indeed, a high-performance shared-memory program can sometimes start to resemble a message-passing program.
+Finally, even within a shared-memory computer a message-passing program can sometimes run faster than a shared-memory program.  This is because it is expensive (in time and energy) to share data between processors and it is hard to deisgn a shared-memory program that minimizes the amount of data being touched by multiple processors.  In contrast, a message-passing program shares no data, and all memory references are local to that process.  Indeed, a high-performance shared-memory program can sometimes start to resemble a message-passing program.
 
-MPI is now the defacto standard for message passing in high-performance computing, with multiple implementations from the community and computer vendors.
+The Message Passing Interface (MPI) is now the defacto standard for message passing in high-performance computing, with multiple implementations from the community and computer vendors.
+
+The objective of this brief tutorial is to introduce key elements of MPI and its practical use within the molecular sciences.
 
 References:
 * CSP --- https://en.wikipedia.org/wiki/Communicating_sequential_processes
