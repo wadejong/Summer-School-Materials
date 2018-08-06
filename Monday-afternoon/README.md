@@ -212,7 +212,7 @@ Add arrays time: 0.731854\
 Average result time: 0.901738\
 \
 Average: 500000001.500000\
-Total time: 5.338318\
+Total time: 5.338318
 
 Let's start by parallelizing the loop that adds arrays `a` and `b`.
 
@@ -332,7 +332,7 @@ Timings:\
    Force Calc:      27.761795\
    Velocity Update: 0.002919\
    Coords Update:   0.002996\
-   Total:           27.837919\
+   Total:           27.837919
 
 Clearly, the most expensive part of the code is the region where the forces are calculated, which consists of a double loop over all particles.
 
@@ -375,7 +375,7 @@ Timings:\
    Force Calc:      105.411667\
    Velocity Update: 0.004905\
    Coords Update:   0.004812\
-   Total:           105.493340\
+   Total:           105.493340
 
 Unfortunately, this change causes the entire calculation to slow down substantially.
 Worse, the simulation no longer produces the same results!
@@ -424,7 +424,7 @@ Timings:\
    Force Calc:      11.333533\
    Velocity Update: 0.004574\
    Coords Update:   0.006350\
-   Total:           11.412276\
+   Total:           11.412276
 
 That having been said, we can probably do somewhat better.
 Every time the code enters an OpenMP-threaded region, the master thread must perform a `fork` (and later a `join`).
@@ -462,7 +462,7 @@ Timings:\
    Force Calc:      5.993662\
    Velocity Update: 0.004461\
    Coords Update:   0.006491\
-   Total:           6.072995\
+   Total:           6.072995
 
 That definitely helped - apparently the code was spending nearly half the time doing OpenMP overhead work.
 
