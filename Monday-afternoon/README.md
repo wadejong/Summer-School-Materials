@@ -31,7 +31,7 @@ You could run the code just by typing `example1` into the command line, but ther
 Run the script now.
 
 ~~~
-$ run.sh
+$ qsub run.sh
 ~~~
 {: .bash}
 
@@ -87,7 +87,7 @@ export OMP_NUM_THREADS=4
 Now let's run the code:
 
 ~~~
-$ run.sh
+$ qsub run.sh
 ~~~
 {: .bash}
 
@@ -124,7 +124,7 @@ Compile and run the code:
 
 ~~~
 $ make
-$ run.sh
+$ qsub run.sh
 ~~~
 {: .bash}
 
@@ -204,7 +204,7 @@ In this directory is a code that does some simple math on some arrays, and then 
 
 ~~~
 $ make
-$ run.sh
+$ qsub run.sh
 ~~~
 {: .bash}
 
@@ -379,7 +379,7 @@ Compiling and running this code should produce something like the following:
 
 ~~~
 $ make
-$ run.sh
+$ qsub run.sh
 ~~~
 {: .bash}
 
@@ -545,7 +545,7 @@ Now we will work on a somewhat more realistic example of an MD code.
 ~~~
 cd ../example4
 make
-run.sh
+qsub run.sh
 ~~~
 {: .bash}
 

@@ -4,7 +4,7 @@
 
 int N = 1000000000;
 
-void main()
+int main()
 {
 
   //declare two arrays
@@ -39,4 +39,6 @@ void main()
 
   delete(a);
   delete(b);
+
+  return 0;
 }

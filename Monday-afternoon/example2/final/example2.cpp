@@ -4,7 +4,7 @@
 
 int N = 1000000000;
 
-void main()
+int main()
 {
 
   double start_time = omp_get_wtime();
@@ -57,4 +57,6 @@ void main()
   delete(b);
 
   printf("Total time: %f\n",omp_get_wtime()-start_time);
+
+  return 0;
 }

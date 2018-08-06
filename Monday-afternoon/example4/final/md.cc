@@ -9,9 +9,9 @@
 
 // Global data
 
-const int natom = 2000;         // Number of atoms
+const int natom = 8000;         // Number of atoms
 const double sigma = 20;	// Particle radius
-const double L = 800;		// Box size
+const double L = 1600;		// Box size
 const double epsilon = 1.0;	// Binding energy
 const double target_temp = 0.4; // Target temperature
 const int nprint = 100;		// Print & temp scale every 100 steps
