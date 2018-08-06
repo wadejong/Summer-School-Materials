@@ -11,12 +11,14 @@ $ cd example1
 
 If you open `example1.cpp` with a text editor, you will see that it is a simple Hello World code.
 
-```
+``` cpp
 #include <stdio.h>
 
-void main()
+int main()
 {
   printf("Hello World\n");
+  
+  return 0;
 }
 ```
 
@@ -52,12 +54,14 @@ Your code should look like:
 #include <stdio.h>
 #include <omp.h>
 
-void main()
+int main()
 {
 #pragma omp parallel
   {
     printf("Hello World\n");
   }
+  
+  return 0;
 }
 ```
 
@@ -109,13 +113,15 @@ Open `example1.cpp` and edit code to read:
 #include <stdio.h>
 #include <omp.h>
 
-void main()
+int main()
 {
 #pragma omp parallel
   {
     int thread_id = omp_get_thread_num();
     printf("Hello World! (%i)\n", thread_id);
   }
+  
+  return 0
 }
 ```
 
@@ -146,7 +152,7 @@ We will add another `printf` after the OpenMP-parallelized block, followed by a 
 #include <stdio.h>
 #include <omp.h>
 
-void main()
+int main()
 {
 #pragma omp parallel
   {
@@ -162,6 +168,8 @@ void main()
     int thread_id = omp_get_thread_num();
     printf("Goodbye World! (%i)\n", thread_id);
   }
+  
+  return 0;
 }
 ```
 
