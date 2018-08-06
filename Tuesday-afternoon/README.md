@@ -422,11 +422,11 @@ There are many pre-defined reduction operation and you can also define your own
 
 In `exercises/trapezoid_seq.cc` is a sequential program that uses the trapezoid rule to estimate the value of the integral
 
-<img src="https://latex.codecogs.com/svg.latex?\Large&space;\int&#95;{-6}^{6}\exp(-x^2)\cos(3x)" title="Amdahl" />
+<img src="https://latex.codecogs.com/svg.latex?\Large&space;\int&#95;{-6}^{6}\exp(-x^2)\cos(3x)\,dx" title="Amdahl" />
 
-It increases the number of points used by a factor two until the error is satisfactory.
+It repeatedly increases the number of points by a factor two until the error is satisfactory.
 
-Please make it run in parallel using MPI with process 0 responsible for choosing the value of N and deciding if the error is satisfactory (and of course telling everyone else).
+Please make it run in parallel using MPI with process 0 responsible for choosing the number of points and deciding if the error is satisfactory (and of course telling everyone else).
 
 We will walk through the solution together since this is an important example.
 
