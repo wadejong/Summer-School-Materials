@@ -93,9 +93,9 @@ $ qsub run.sh
 {: .bash}
 
 > Hello World!
-> Hello World!
-> Hello World!
-> Hello World!
+Hello World!
+Hello World!
+Hello World!
 
 The code prints `Hello World!` four times, but obviously this isn't because of any `for` loop.
 Each of the four OpenMP threads that we specified with `OMP_NUM_THREADS` executes the `printf` call independently.
