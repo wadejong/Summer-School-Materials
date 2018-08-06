@@ -57,7 +57,9 @@ References:
 
 * [MPI interface](https://www.mpich.org/static/docs/v3.2/)
 
-* [MPI tutorial](https://computing.llnl.gov/tutorials/mpi/) from LLNL --- excellent, thorough with good links
+* [MPI tutorial](https://computing.llnl.gov/tutorials/mpi/) from LLNL --- excellent, thorough, with good links
+
+* [MPI lectures](http://wgropp.cs.illinois.edu/courses/cs598-s16) from Gropp at UIUC --- excellent and very detailed
 
 * [MPI tutorial](https://htor.inf.ethz.ch/teaching/mpi_tutorials/ppopp13/2013-02-24-ppopp-mpi-basic.pdf) --- MPI for dummies
 
@@ -328,6 +330,8 @@ Write a program to send an integer (`=99`) around a ring of processes (i.e., `0`
     MPI_Recv
 ~~~
 
+A timer is also useful --- `MPI_Wtime()` returns a high precision wall clock (elapsed) time.  Note that clocks on each process are **not** synchronized.
+
 ### Non-blocking (asynchronous) communication
 
 * When a non-blocking send function completes, the user must not modify the send buffer until the request is known to have completed (e.g., using `MPI_Test` or `MPI_Wait`).
@@ -491,13 +495,15 @@ For point-to-point communication, the central concepts are latency (*L*, the tim
 
 <img src="https://latex.codecogs.com/svg.latex?\Large&space;T(N)=L+\frac{N}{B}" title="LB" />
 
-For typical modern computers *L*=1-10us and *B*=10-50Gbytes/s.  It is hard to accurately measure the latency since on modern hardware the actual cost can depend upon what else is going on in the system and upon your communication pattern.  The bandwidth is a bit easier to measure by sending very large messages, but it can still depend on communication pattern and destination.
+For typical modern computers *L*=1-10us and *B*=1-100Gbytes/s.  It is hard to accurately measure the latency since on modern hardware the actual cost can depend upon what else is going on in the system and upon your communication pattern.  The bandwidth is a bit easier to measure by sending very large messages, but it can still depend on communication pattern and destination.
 
 An important and easy to remember value is *N1/2*, which is the message length necessary to obtain 50% of peak bandwidth (i.e., *T(N)=2N/B*)
 
 <img src="https://latex.codecogs.com/svg.latex?\Large&space;N&#95;{1/2}=LB" title="Nhalf" />
 
-Inserting *L*=1us and *B*=10Gbyte/s, we obtain *N1/2*=10000bytes.  You can derive similar a similar formula for the length necessary to acheive 90% peak bandwith.
+Inserting *L*=1us and *B*=10Gbyte/s, we obtain *N1/2*=10000bytes.
+
+Excercise: Derive a similar a similar formula for the length necessary to acheive 90% peak bandwith.
 
 Bisection bandwidth is another important concept especially if you are doing a lot of communication all at once.  Divide your parallel machine in two halves so as to give the worst possible bandwidth connecting the halves.  This is the bisection bandwidth, which you can derive by counting the number of wires that you cut.  If your communication pattern is not local but is uniform and does not have any hot spots (think uniform and random), your effective bandwidth is the bisection bandwidth divided by the number of processes.  This can be much smaller than the bandwidth obtained by a single message on a quiet machine.  Thus, the communication intensity of your application is important.  Spreading communication over a larger period of time is a possible optimization.
 
@@ -522,7 +528,7 @@ There are some powerful visual parallel debuggers that understand MPI, but since
 * systolic loop
 * reading about parallel mxm
 
-**to be added**
+**To be expanded**
 
 ## 8. Additional concepts and material
 
@@ -530,8 +536,15 @@ There are some powerful visual parallel debuggers that understand MPI, but since
 * Inter communicators
 * Toplogies
 
-**to be added**
+**To be expanded**
 
-## Exercises
+## 9. Exercises
 
+1. Skim through some of the other tutorials and documentation that have links provided above
+2. Write a program to benchmark the performance of reduce, all-reduce, broadcast as a function of both N and P.  Use N=1,2,4,8,...,1024*1024 doubles. And experiment with processes on the same node and on
+different nodes (this means setting #nodes and #ppn correctly in the PBS file).
+3. Work through the various examples in the `exercises/` directory
+4. [easy] Parallelize Monte Carlo computation of pi starting from `exercises/pi_seq.cc`.
+5. [medium] Parallelize the recursively adaptive quadrature program `exercises/recursive.cc`.
+6. [medium-hard] Write MPI versions of the example SCF, VMC, or MD codes
 
