@@ -71,7 +71,7 @@ void calculate_velocities(double coords[][2], double velocities[][2], double* en
   vel_update_time += omp_get_wtime() - start_loop;
 }
 
-void main()
+int main()
 {
 
   double start_time = omp_get_wtime();
@@ -125,4 +125,5 @@ void main()
     printf("   Coords Update:   %f\n", coord_update_time);
     printf("   Total:           %f\n", omp_get_wtime()-start_time);
 
+    return 0;
 }
