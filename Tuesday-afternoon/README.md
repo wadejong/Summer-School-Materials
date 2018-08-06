@@ -404,6 +404,8 @@ Essential concepts to reason about the performance of your message passing appli
 
 * Latency and bandwidth of communication
 
+* Weak and strong scaling
+
 
 ### Amdahl's law
 
@@ -411,9 +413,11 @@ Essential concepts to reason about the performance of your message passing appli
 
 <img src="https://latex.codecogs.com/svg.latex?\Large&space;T(P)=Ts+\frac{Tp}{P}" title="Amdahl" />
 
+The speedup is the ratio of sequential to parallel execution time
 
+<img src="https://latex.codecogs.com/svg.latex?\Large&space;S(P)=\frac{Ts+Tp}{Ts+\frac{Tp}{P}}" title="Amdahl" />
 
-<img src="https://latex.codecogs.com/svg.latex?\Large&space;x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}" title="\Large x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}" />
+and you can see that (assuming *Tp>>Ts*) the maximum speed up is *Tp/Ts*.  I.e., to get a speedup of 100, 99% of your work must run perfectly parallel.  To get a speedup of 1000,000  (the size of modern supercomputers) 99.9999% perfect parallelism is necessary.   Bear this in mind when setting performance goals and expectations.
 
 
 
