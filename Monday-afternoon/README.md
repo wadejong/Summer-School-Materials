@@ -25,7 +25,7 @@ int main()
 Go ahead and build the code.
 
 ~~~
-> $ make
+$ make
 ~~~
 {: .bash}
 
@@ -37,10 +37,7 @@ $ qsub run.sh
 ~~~~
 {: .bash}
 
-> ~~~
-Hello World!
-~~~
-{: .output}
+> Hello World!
 
 We will now turn this into a multi-threaded code.
 To use OpenMP, you will need to add `#include <omp.h>` to the beginning of your code.
@@ -95,13 +92,10 @@ $ qsub run.sh
 ~~~
 {: .bash}
 
-~~~
-Hello World!
-Hello World!
-Hello World!
-Hello World!
-~~~
-{: .output}
+> Hello World!
+> Hello World!
+> Hello World!
+> Hello World!
 
 The code prints `Hello World!` four times, but obviously this isn't because of any `for` loop.
 Each of the four OpenMP threads that we specified with `OMP_NUM_THREADS` executes the `printf` call independently.
