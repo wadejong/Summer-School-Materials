@@ -579,7 +579,10 @@ Matrix compute_2body_fock(const std::vector<libint2::Shell>& shells,
   auto shell2bf = map_shell_to_basis_function(shells);
   Matrix Gtotal = Matrix::Zero(n,n);
 
-#pragma omp parallel default(none) shared(shells,shell2bf,D,Gtotal,time_elapsed)
+
+#pragma omp parallel
+// or try this if you do not want all variables shared by default
+//#pragma omp parallel default(none) shared(shells,shell2bf,D,Gtotal,time_elapsed)
   {
     const int tid = omp_get_thread_num();
     const int nthread = omp_get_num_threads();
