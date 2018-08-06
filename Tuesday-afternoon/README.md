@@ -7,7 +7,7 @@
 1.  Useful links
 1.  Hello world in *just* 20 minutes
 1.  Sending messages between processes
-1.  Global operations
+1.  Global or collective operations
 1.  Review of the 6-8 essential MPI operations
 1.  Communicators and groups
 1.  Reasoning about performance
@@ -361,20 +361,74 @@ Write a program to send an integer (`=99`) around a ring of processes (i.e., `0`
 
 **to be added**
 
+Note monte-carlo example
 
-## 5. Global operations
 
-Many chemistry, materials, and biophysics applications are written without using any point-to-point communication routines.  
+## 5. Global or collective operations
 
 ### Essential elements
 1. Broadcast
 2. Reduction
 3. Barrier
-3. Gather and scatter
-4. Non-blocking globals
-5. Other communication modes (synchronous send, buffered send)
+4. Other global operations
+
+In constrast to point-to-point operations that involve just two processes, global operations move data between **all** processes asscociated with a communicator with an implied **synchronization** between them.  All processes within a communicator are required to invoke the operation --- hence the alternative name "collective" operations.
+
+Many chemistry, materials, and biophysics applications are written using only global operations to
+* share information between all processes by broadcasting, and
+* compute sums over (partial) results computed by each processes.
+
+We introduce broadcast and reduction and then work through an example.
 
 ### Broadcast
+
+Broadcasts a buffer of data from process rank `root` to all other processes.  Once the operation is complete within a process its buffer contains the same data as that of process `root`.
+```
+    int MPI_Bcast (void *buffer, int count, MPI_Datatype datatype, int root,  MPI_Comm comm)
+```
+* `root` --- the process that is broadcasting the data --- this **must** be the same in all processes
+
+### Reduction
+
+Combines values with a reduction operation from all processes either to just process `root` (`MPI_Reduce`) or distributing the result back to all processes (`MPI_Allreduce`).
+
+```
+    int MPI_Reduce (const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm)
+
+    int MPI_Allreduce (const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm )
+```
+* `sendbuf` --- a pointer to the buffer that contains the local data to be reduced
+* `recvbuf` --- a pointer to the buffer that will hold the result
+
+There are many pre-defined reduction operation and you can also define your own
+
+|**Operation** | Description | Datatype|
+|:-------------|:------------|:--------|
+|MPI_MAX       |maximum      |integer,float|
+|MPI_MIN       |minimum      |integer,float|
+|MPI_SUM       |sum          |integer,float|
+|MPI_PROD      |product      |integer,float|
+|MPI_LAND      |logical AND  |integer|
+|MPI_BAND      |bit-wise AND |integer,MPI_BYTE|
+|MPI_LOR       |logical OR   |integer|
+|MPI_BOR       |bit-wise OR  |integer,MPI_BYTE|
+|MPI_LXOR      |logical XOR  |integer|
+|MPI_BXOR      |bit-wise XOR |integer,MPI_BYTE|
+|MPI_MAXLOC    |max value and location|float|
+|MPI_MINLOC    |min value and location|float|
+
+### Exercise:
+
+In `exercises/trapezoid_seq.cc` is a sequential program that uses the trapezoid rule to estimate the value of the integral
+
+<img src="https://latex.codecogs.com/svg.latex?\Large&space;\int&#95;{-6}^{6}\exp(-x^2)\cos(3x)" title="Amdahl" />
+
+It increases the number of points used by a factor two until the error is satisfactory.
+
+Please make it run in parallel using MPI with process 0 responsible for choosing the value of N and deciding if the error is satisfactory (and of course telling everyone else).
+
+We will walk through the solution together since this is an important example.
+
 
 ### Another minimal set of six operations
 
@@ -386,12 +440,11 @@ Many chemistry, materials, and biophysics applications are written without using
     MPI_Bcast
     MPI_Reduce
 ~~~
-Or eight if you include
+Or a total of eight if you include
 ~~~
     MPI_Send
     MPI_Recv
 ~~~
-
 
 
 ##  6. Reasoning about performance
@@ -475,7 +528,6 @@ There are some powerful visual parallel debuggers that understand MPI, but since
 * Groups
 * Inter communicators
 * Toplogies
-* 
 
 **to be added**
 
