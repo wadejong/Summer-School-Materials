@@ -440,7 +440,7 @@ For typical modern computers *L*=1-10us and *B*=10-50Gbytes/s.  It is hard to ac
 
 An important and easy to remember value is *N1/2*, which is the message length necessary to obtain 50% of peak bandwidth (i.e., *T(N)=2N/B*)
 
-<img src="https://latex.codecogs.com/svg.latex?\Large&space;N_{1/2}=LB" title="Nhalf" />
+<img src="https://latex.codecogs.com/svg.latex?\Large&space;N\_{1/2}=LB" title="Nhalf" />
 
 Inserting *L*=10us and *B*=10Gbyte/s, we obtain *N1/2*=100000bytes.  For many science applications this is a long message.  You can derive similar a similar formula for the length necessary to acheive 90% peak bandwith.
 
