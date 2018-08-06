@@ -4,10 +4,7 @@ title: "Intro to OpenMP"
 
 ## Example 1
 
-~~~
-$ cd example1
-~~~
-{: .bash}
+**$ cd example1**
 
 If you open `example1.cpp` with a text editor, you will see that it is a simple Hello World code.
 
@@ -24,18 +21,12 @@ int main()
 
 Go ahead and build the code.
 
-~~~
-$ make
-~~~
-{: .bash}
+**$ make**
 
 You could run the code just by typing `example1` into the command line, but there is also a simple script that does the same thing.
 Run the script now.
 
-~~~~
-$ qsub run.sh
-~~~~
-{: .bash}
+**$ qsub run.sh**
 
 > Hello World!
 
@@ -71,10 +62,7 @@ CXXFLAGS = -xHOST -O3 -ipo -no-prec-div -fp-model fast=2 -qopenmp
 
 Go ahead and rebuild the code.
 
-~~~
-$ make
-~~~
-{: .bash}
+**$ make**
 
 Before running the code, we should also specify how many OpenMP threads we want to run on.
 This is something that you decide at run-time, by setting a special system variable called `OMP_NUM_THREADS`.
@@ -87,14 +75,11 @@ export OMP_NUM_THREADS=4
 
 Now let's run the code:
 
-~~~
-$ qsub run.sh
-~~~
-{: .bash}
+**$ qsub run.sh**
 
-> Hello World!
-Hello World!
-Hello World!
+> Hello World!\
+Hello World!\
+Hello World!\
 Hello World!
 
 The code prints `Hello World!` four times, but obviously this isn't because of any `for` loop.
@@ -121,19 +106,13 @@ int main()
 
 Compile and run the code:
 
-~~~
-$ make
-$ qsub run.sh
-~~~
-{: .bash}
+**$ make\
+$ qsub run.sh**
 
-~~~
-Hello World! (2)
-Hello World! (3)
-Hello World! (1)
+>Hello World! (2)\
+Hello World! (3)\
+Hello World! (1)\
 Hello World! (0)
-~~~
-{: .output}
 
 Run the code a few more times, and you will find that the order in which the threads print their message isn't always the same.
 This is because all of the threads run simultaneously, and depending on largely random factors some will finish slightly before others.
@@ -169,26 +148,23 @@ int main()
 
 If you compile and run this code, you should get something like
 
-~~~
-Hello World! (2)
-Hello World! (0)
-Hello World! (1)
-Hello World! (3)
-This is another message! (0)
-Goodbye World! (0)
-Goodbye World! (1)
+>Hello World! (2)\
+Hello World! (0)\
+Hello World! (1)\
+Hello World! (3)\
+This is another message! (0)\
+Goodbye World! (0)\
+Goodbye World! (1)\
 Goodbye World! (2)
-~~~
-{: .output}
 
 The following happens when the code is run:
 
-   1. The code begins executing sequentially, with only the "master thread" running.
-   2. When the master thread encounters an OpenMP-parallelized block, it `forks`, causing a number of threads equal to OMP_NUM_THREADS to begin executing.
-   3. At the end of the OpenMP-parallelized block, the threads are all `joined` to the master thread, and sequential execution is resumed.
-   4. The second `printf` is executed by only the master thread.
-   5. The master thread again forks, but only creates a total of three threads. 
-   6. All of the threads print a new line, and then are joined again.
+ 1. The code begins executing sequentially, with only the "master thread" running.
+ 2. When the master thread encounters an OpenMP-parallelized block, it `forks`, causing a number of threads equal to OMP_NUM_THREADS to begin executing.
+ 3. At the end of the OpenMP-parallelized block, the threads are all `joined` to the master thread, and sequential execution is resumed.
+ 4. The second `printf` is executed by only the master thread.
+ 5. The master thread again forks, but only creates a total of three threads. 
+ 6. All of the threads print a new line, and then are joined again.
 
 https://en.wikipedia.org/wiki/Fork%E2%80%93join_model#/media/File:Fork_join.svg
 
@@ -196,23 +172,14 @@ https://en.wikipedia.org/wiki/Fork%E2%80%93join_model#/media/File:Fork_join.svg
 
 We will now work on Example 2.
 
-~~~
-$ cd ../example2
-~~~
-{: .bash}
+**$ cd ../example2**
 
 In this directory is a code that does some simple math on some arrays, and then prints the average of the result:
 
-~~~
-$ make
-$ qsub run.sh
-~~~
-{: .bash}
+**$ make\
+$ qsub run.sh**
 
-~~~
-Average: 500000001.500000
-~~~
-{: .output}
+>Average: 500000001.500000
 
 We would like to improve the speed of this calculation through parallelization.
 Before doing any sort of optimizations on a code, we should learn about which parts of the calculation are the most expensive - otherwise, we might waste our time parallelizing a part of the code that already doesn't take long to run, while ignoring much more costly parts of the code.
@@ -233,25 +200,19 @@ Now add the following to the end of main:
 
 The code should now output the total about of time required to run:
 
-~~~
-Average: 500000001.500000
+>Average: 500000001.500000\
 Total time: 16.082229
-~~~
-{: .output}
 
 Add similar timing statements around each of the `for` loops.
 This should produce output similar to the following:
 
-~~~
-Initialize a time: 1.100083
-Initialize b time: 2.558985
-Add arrays time: 0.731854
-Average result time: 0.901738
-
-Average: 500000001.500000
-Total time: 5.338318
-~~~
-{: .output}
+>Initialize a time: 1.100083\
+Initialize b time: 2.558985\
+Add arrays time: 0.731854\
+Average result time: 0.901738\
+\
+Average: 500000001.500000\
+Total time: 5.338318\
 
 Let's start by parallelizing the loop that adds arrays `a` and `b`.
 
@@ -272,10 +233,7 @@ A much easier way to parallelize this loop is to say:
   }
 ```
 
-~~~
-Add arrays time: 0.406463
-~~~
-{: .output}
+>Add arrays time: 0.406463
 
 Now we will parallelize the loop that averages the result.
 
@@ -286,16 +244,13 @@ Now we will parallelize the loop that averages the result.
   average = average/double(N);
 ```
 
-~~~
-Initialize a time: 1.081612
-Initialize b time: 2.550393
-Add arrays time: 0.393584
-Average result time: 0.232804
-
-Average: 31250000.375000
+>Initialize a time: 1.081612\
+Initialize b time: 2.550393\
+Add arrays time: 0.393584\
+Average result time: 0.232804\
+\
+Average: 31250000.375000\
 Total time: 4.303908
-~~~
-{: .output}
 
 This made the loop finish more quickly, but it also changed the final result.
 What happened?
@@ -312,16 +267,13 @@ This is known as a reduction operation, and we can tell the compiler that this i
   average = average/double(N);
 ```
 
-~~~
-Initialize a time: 1.084566
-Initialize b time: 2.557586
-Add arrays time: 0.400930
-Average result time: 0.233017
-
-Average: 500000001.500000
+>Initialize a time: 1.084566\
+Initialize b time: 2.557586\
+Add arrays time: 0.400930\
+Average result time: 0.233017\
+\
+Average: 500000001.500000\
 Total time: 4.321464
-~~~
-{: .output}
 
 We've made some nice improvements to a couple of the loops, but the real bottlenect happens when `a` and `b` are initialized.
 We will now work on the loop that initializes `a`.
@@ -334,16 +286,13 @@ Start by adding an OpenMP pragma:
   }
 ```
 
-~~~
-Initialize a time: 1.598507
-Initialize b time: 2.556661
-Add arrays time: 0.347225
-Average result time: 0.234209
-
-Average: 500000001.500000
+>Initialize a time: 1.598507\
+Initialize b time: 2.556661\
+Add arrays time: 0.347225\
+Average result time: 0.234209\
+\
+Average: 500000001.500000\
 Total time: 4.783023
-~~~
-{: .output}
 
 Now do the same thing to b:
 
@@ -354,47 +303,36 @@ Now do the same thing to b:
   }
 ```
 
-~~~
-Initialize a time: 1.566816
-Initialize b time: 2.760745
-Add arrays time: 0.346645
-Average result time: 0.233726
-
-Average: 500000001.500000
+>Initialize a time: 1.566816\
+Initialize b time: 2.760745\
+Add arrays time: 0.346645\
+Average result time: 0.233726\
+\
+Average: 500000001.500000\
 Total time: 4.953596
-~~~
-{: .output}
 
-NOTE THAT EVEN THE LAST TWO LOOPS ARE FASTER NOW.  TALK ABOUT FIRST TOUCH.
+Notice that now even the last two loops are faster.
+This is because of the principle of first touch.
 
 ## Example 3
 
 Now we will look at Example 3.
 
-~~~
-$ cd ../example3
-~~~
-{: .bash}
+**$ cd ../example3**
 
 Compiling and running this code should produce something like the following:
 
-~~~
-$ make
-$ qsub run.sh
-~~~
-{: .bash}
+**$ make\
+$ qsub run.sh**
 
-~~~
-Iteration: 999      Energy: 92079.129718      PE: 16253.127101
-
-Timings:
-   Force Zero:      0.002891
-   Force Calc:      27.761795
-   Velocity Update: 0.002919
-   Coords Update:   0.002996
-   Total:           27.837919
-~~~
-{: .output}
+>Iteration: 999      Energy: 92079.129718      PE: 16253.127101\
+\
+Timings:\
+   Force Zero:      0.002891\
+   Force Calc:      27.761795\
+   Velocity Update: 0.002919\
+   Coords Update:   0.002996\
+   Total:           27.837919\
 
 Clearly, the most expensive part of the code is the region where the forces are calculated, which consists of a double loop over all particles.
 
@@ -430,17 +368,14 @@ One approach to speeding this code up would be to add OpenMP parallelization to 
   }
 ```
 
-~~~
-Iteration: 999      Energy: 211062.450046      PE: 5124.896336
-
-Timings:
-   Force Zero:      0.003662
-   Force Calc:      105.411667
-   Velocity Update: 0.004905
-   Coords Update:   0.004812
-   Total:           105.493340
-~~~
-{: .output}
+>Iteration: 999      Energy: 211062.450046      PE: 5124.896336\
+\
+Timings:\
+   Force Zero:      0.003662\
+   Force Calc:      105.411667\
+   Velocity Update: 0.004905\
+   Coords Update:   0.004812\
+   Total:           105.493340\
 
 Unfortunately, this change causes the entire calculation to slow down substantially.
 Worse, the simulation no longer produces the same results!
@@ -482,17 +417,14 @@ The modified code looks like:
 The main differences here are: (1) we changed the starting value of `j` from `i+1` to `0`, (2) we commented out the updates to `forces[i]`, (3) we multiple all contributions to `v` by `0.5` to avoid a double-counting error, and (4) we add an `if` check to avoid the `i == j` case.
 This code produces the correct result while also being substantially faster.
 
-~~~
-Iteration: 999      Energy: 92079.129718      PE: 16253.127101
-
-Timings:
-   Force Zero:      0.003209
-   Force Calc:      11.333533
-   Velocity Update: 0.004574
-   Coords Update:   0.006350
-   Total:           11.412276
-~~~
-{: .output}
+>Iteration: 999      Energy: 92079.129718      PE: 16253.127101\
+\
+Timings:\
+   Force Zero:      0.003209\
+   Force Calc:      11.333533\
+   Velocity Update: 0.004574\
+   Coords Update:   0.006350\
+   Total:           11.412276\
 
 That having been said, we can probably do somewhat better.
 Every time the code enters an OpenMP-threaded region, the master thread must perform a `fork` (and later a `join`).
@@ -523,63 +455,52 @@ We can improve things by moving the parallelization to the outer loop over `i`.
   }
 ```
 
-~~~
-Iteration: 999      Energy: 92079.129718      PE: 16253.127101
-
-Timings:
-   Force Zero:      0.003137
-   Force Calc:      5.993662
-   Velocity Update: 0.004461
-   Coords Update:   0.006491
-   Total:           6.072995
-~~~
-{: .output}
+>Iteration: 999      Energy: 92079.129718      PE: 16253.127101\
+\
+Timings:\
+   Force Zero:      0.003137\
+   Force Calc:      5.993662\
+   Velocity Update: 0.004461\
+   Coords Update:   0.006491\
+   Total:           6.072995\
 
 That definitely helped - apparently the code was spending nearly half the time doing OpenMP overhead work.
-
-NOTE: Now do a scaling test.
 
 ## Example 4
 
 Now we will work on a somewhat more realistic example of an MD code.
 
-~~~
-cd ../example4
-make
-qsub run.sh
-~~~
-{: .bash}
+**cd ../example4\
+make\
+qsub run.sh**
 
-~~~
-Time step 0.03
-optim: 9.80472e+10 0.1
-optim: 3137.9 0.1
-optim: -2427.1 0.1
-optim: -3514.3 0.1
-optim: -4000.33 0.1
-optim: -4308.11 0.1
-optim: -4538.5 0.1
-optim: -4714.19 0.1
-optim: -4850.49 0.1
-optim: -4963.01 0.1
-optim: -5059.17 0.1
-optim: -5142.09 0.1
-
-    time         ke            pe             e            T          P
-  -------    -----------   ------------  ------------    ------    ------
-     3.00      739.80960    -4605.50038   -3865.69078    0.372   0.04019894 *
-     6.00      854.80325    -4663.78391   -3808.98066    0.411   0.03964152 *
-     9.00      905.18315    -4737.69185   -3832.50870    0.440   0.03866409 *
-    12.00      913.10300    -4827.40769   -3914.30469    0.442   0.03758880  
-    15.00      948.14449    -4862.46512   -3914.32064    0.458   0.03720336  
-    18.00      928.22937    -4842.54125   -3914.31187    0.471   0.03691174  
-    21.00      941.71383    -4856.04247   -3914.32864    0.468   0.03687610  
-    24.00      931.78512    -4846.10107   -3914.31595    0.481   0.03663177  
-    27.00      972.20073    -4886.54979   -3914.34907    0.478   0.03668399  
-    30.00      988.53842    -4902.87704   -3914.33862    0.488   0.03647202  
+>Time step 0.03\
+optim: 9.80472e+10 0.1\
+optim: 3137.9 0.1\
+optim: -2427.1 0.1\
+optim: -3514.3 0.1\
+optim: -4000.33 0.1\
+optim: -4308.11 0.1\
+optim: -4538.5 0.1\
+optim: -4714.19 0.1\
+optim: -4850.49 0.1\
+optim: -4963.01 0.1\
+optim: -5059.17 0.1\
+optim: -5142.09 0.1\
+\
+    time         ke            pe             e            T          P\
+  -------    -----------   ------------  ------------    ------    ------\
+     3.00      739.80960    -4605.50038   -3865.69078    0.372   0.04019894 *\
+     6.00      854.80325    -4663.78391   -3808.98066    0.411   0.03964152 *\
+     9.00      905.18315    -4737.69185   -3832.50870    0.440   0.03866409 *\
+    12.00      913.10300    -4827.40769   -3914.30469    0.442   0.03758880  \
+    15.00      948.14449    -4862.46512   -3914.32064    0.458   0.03720336  \
+    18.00      928.22937    -4842.54125   -3914.31187    0.471   0.03691174  \
+    21.00      941.71383    -4856.04247   -3914.32864    0.468   0.03687610  \
+    24.00      931.78512    -4846.10107   -3914.31595    0.481   0.03663177  \
+    27.00      972.20073    -4886.54979   -3914.34907    0.478   0.03668399  \
+    30.00      988.53842    -4902.87704   -3914.33862    0.488   0.03647202  \
 times:  force=14.67s  neigh=6.03s  total=21.74s
-~~~
-{: .output}
 
 The code primarily consists of three sections: (1) The `neighbor_list` function, which generates a list of atom pairs that are close enough to be considered interacting, (2) a `forces` function, which calculates all contributions to the forces from the pairs in the neighbor list, and (3) the `md` function, which runs the calculation by calling `neighbor_list` and `forces` and then updating the atomic coordinates each timestep.
 
@@ -715,10 +636,7 @@ Then, `just before` the end of the OpenMP block, write the following:
 
 Running on four threads, this gives substantially improved performance for the forces:
 
-~~~
-times:  force=3.66s  neigh=7.00s  total=10.82s
-~~~
-{: .output}
+>times:  force=3.66s  neigh=7.00s  total=10.82s
 
 Now let's work on the `neighbor_list` function.
 Once again, we will convert the `for` loop over `thrneigh` into an OpenMP parallelized region.
@@ -734,17 +652,11 @@ Once again, we will convert the `for` loop over `thrneigh` into an OpenMP parall
 
 This improves the neighborlist creation time substantially:
 
-~~~
-times:  force=3.66s  neigh=2.17s  total=5.98s
-~~~
-{: .output}
+>times:  force=3.66s  neigh=2.17s  total=5.98s
 
 Running on 64 threads, we get this:
 
-~~~
-times:  force=1.12s  neigh=0.31s  total=1.60s
-~~~
-{: .output}
+>times:  force=1.12s  neigh=0.31s  total=1.60s
 
 One issue that limits our performance at high thread counts is the fact that we are not doing anything to `load balance` the neighborlist across threads.
 We can improve the load balancing by adding some code to ensure that each thread has a neighborlist of similar length.
@@ -778,10 +690,7 @@ Add the following just before the end of the OpenMP parallelized block in `neigh
 
 Unfortunately, this really doesn't help our timings:
 
-~~~
-times:  force=1.30s  neigh=57.78s  total=59.25s
-~~~
-{: .output}
+>times:  force=1.30s  neigh=57.78s  total=59.25s
 
 The problem is that the added code does lots of operations that resize the neighborlists, which is a slow operation on a C++ `list` type.
 To fix this, change the `neighT` type to be a vector:
@@ -798,7 +707,4 @@ Then, add the following to the `neighbor_list` function, just after the `neigh.c
 
 These changes allow us to get our best timings yet:
 
-~~~
-times:  force=1.22s  neigh=0.12s  total=1.47s
-~~~
-{: .output}
+>times:  force=1.22s  neigh=0.12s  total=1.47s
