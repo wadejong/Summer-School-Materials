@@ -354,11 +354,11 @@ $ qsub run.sh**
 >Iteration: 999      Energy: 92079.129718      PE: 16253.127101\
 \
 Timings:\
-   Force Zero:      0.002891\
-   Force Calc:      27.761795\
-   Velocity Update: 0.002919\
-   Coords Update:   0.002996\
-   Total:           27.837919
+   Force Zero:      0.000707\
+   Force Calc:      15.992926\
+   Velocity Update: 0.014128\
+   Coords Update:   0.001717\
+   Total:           16.014781
 
 Clearly, the most expensive part of the code is the region where the forces are calculated, which consists of a double loop over all particles.
 
@@ -394,17 +394,16 @@ One approach to speeding this code up would be to add OpenMP parallelization to 
   }
 ```
 
->Iteration: 999      Energy: 211062.450046      PE: 5124.896336\
+>Iteration: 999      Energy: 286004.735108      PE: 18173.082058\
 \
 Timings:\
-   Force Zero:      0.003662\
-   Force Calc:      105.411667\
-   Velocity Update: 0.004905\
-   Coords Update:   0.004812\
-   Total:           105.493340
+   Force Zero:      0.001293\
+   Force Calc:      14.219656\
+   Velocity Update: 0.014499\
+   Coords Update:   0.005649\
+   Total:           14.246469
 
-Unfortunately, this change causes the entire calculation to slow down substantially.
-Worse, the simulation no longer produces the same results!
+Unfortunately, this change causes the simulation to no longer produce the same results!
 
 To understand why the results are different, look closely at how this loop updates the forces.
 In the innermost loop is the line `forces[i][0] -= fx;`, which tells the computer "Copy the value of `forces[j][0]` from memory and store it in cache, then subtract `fx` from it, then replace the value of `forces[i][0]` in memory with the result.
@@ -442,22 +441,22 @@ The modified code looks like:
 
 The main differences here are: (1) we changed the starting value of `j` from `i+1` to `0`, (2) we commented out the updates to `forces[i]`, (3) we multiple all contributions to `v` by `0.5` to avoid a double-counting error, and (4) we add an `if` check to avoid the `i == j` case.
 This code produces the correct result while also being substantially faster.
-
+   
 >Iteration: 999      Energy: 92079.129718      PE: 16253.127101\
 \
 Timings:\
-   Force Zero:      0.003209\
-   Force Calc:      11.333533\
-   Velocity Update: 0.004574\
-   Coords Update:   0.006350\
-   Total:           11.412276
+   Force Zero:      0.000792\
+   Force Calc:      7.954821\
+   Velocity Update: 0.003412\
+   Coords Update:   0.005082\
+   Total:           7.969381\
 
 That having been said, we can probably do somewhat better.
 Every time the code enters an OpenMP-threaded region, the master thread must perform a `fork` (and later a `join`).
 Because of this, there is an overhead cost every time the code encounters an OpenMP-parallelized region; the exact amount of overhead can vary, but it is usually on the order of 1 microsecond.
 Think for a moment about how much time the code spends each time it enters our OpenMP region.
-The total amount of time our code spends calculating the forces is 11.4 seconds, and the code enters the OpenMP region a number of times equal to the number of atoms times the number of iterations.
-This works out to approximately 7 microseconds spent inside the OpenMP region each time it is called.
+The total amount of time our code spends calculating the forces is 8.0 seconds, and the code enters the OpenMP region a number of times equal to the number of atoms times the number of iterations.
+This works out to approximately 5 microseconds spent inside the OpenMP region each time it is called.
 That isn't ideal - it is likely that a decent amount of that time is just `fork`/`join` overhead.
 
 We can improve things by moving the parallelization to the outer loop over `i`.
@@ -484,11 +483,11 @@ We can improve things by moving the parallelization to the outer loop over `i`.
 >Iteration: 999      Energy: 92079.129718      PE: 16253.127101\
 \
 Timings:\
-   Force Zero:      0.003137\
-   Force Calc:      5.993662\
-   Velocity Update: 0.004461\
-   Coords Update:   0.006491\
-   Total:           6.072995
+   Force Zero:      0.000737\
+   Force Calc:      4.770037\
+   Velocity Update: 0.002868\
+   Coords Update:   0.005819\
+   Total:           4.784812\
 
 That definitely helped - apparently the code was spending nearly half the time doing OpenMP overhead work.
 
@@ -501,32 +500,32 @@ make\
 qsub run.sh**
 
 >Time step 0.03\
-optim: 9.80472e+10 0.1\
-optim: 3137.9 0.1\
-optim: -2427.1 0.1\
-optim: -3514.3 0.1\
-optim: -4000.33 0.1\
-optim: -4308.11 0.1\
-optim: -4538.5 0.1\
-optim: -4714.19 0.1\
-optim: -4850.49 0.1\
-optim: -4963.01 0.1\
-optim: -5059.17 0.1\
-optim: -5142.09 0.1\
+optim: 1.84389e+17 0.1\
+optim: 11479.9 0.1\
+optim: -10384.3 0.1\
+optim: -14405.6 0.1\
+optim: -16274.2 0.1\
+optim: -17473.3 0.1\
+optim: -18386.3 0.1\
+optim: -19046.1 0.1\
+optim: -19516.6 0.1\
+optim: -19881.7 0.1\
+optim: -20184.1 0.1\
+optim: -20445.1 0.1\
 \
     time         ke            pe             e            T          P\
   -------    -----------   ------------  ------------    ------    ------\
-     3.00      739.80960    -4605.50038   -3865.69078    0.372   0.04019894 *\
-     6.00      854.80325    -4663.78391   -3808.98066    0.411   0.03964152 *\
-     9.00      905.18315    -4737.69185   -3832.50870    0.440   0.03866409 *\
-    12.00      913.10300    -4827.40769   -3914.30469    0.442   0.03758880  \
-    15.00      948.14449    -4862.46512   -3914.32064    0.458   0.03720336  \
-    18.00      928.22937    -4842.54125   -3914.31187    0.471   0.03691174  \
-    21.00      941.71383    -4856.04247   -3914.32864    0.468   0.03687610  \
-    24.00      931.78512    -4846.10107   -3914.31595    0.481   0.03663177  \
-    27.00      972.20073    -4886.54979   -3914.34907    0.478   0.03668399  \
-    30.00      988.53842    -4902.87704   -3914.33862    0.488   0.03647202  \
-times:  force=14.67s  neigh=6.03s  total=21.74s
+     3.00     2937.72894   -18197.02586  -15259.29692    0.371   0.04086690 *\
+     6.00     3426.85950   -18452.47277  -15025.61327    0.408   0.04039200 *\
+     9.00     3603.35315   -18693.26130  -15089.90815    0.441   0.03943282 *\
+    12.00     3615.37003   -19040.76407  -15425.39404    0.436   0.03848593  \
+    15.00     3686.47202   -19111.90579  -15425.43377    0.453   0.03809054  \
+    18.00     3702.65533   -19128.06154  -15425.40621    0.465   0.03778621  \
+    21.00     3812.43640   -19237.88713  -15425.45072    0.472   0.03758076  \
+    24.00     3849.80094   -19275.24791  -15425.44697    0.480   0.03741216  \
+    27.00     3962.65623   -19388.13553  -15425.47930    0.492   0.03713681  \
+    30.00     3973.40391   -19398.90927  -15425.50536    0.495   0.03703538  \
+times:  force=14.85s  neigh=17.29s  total=32.24s
 
 The code primarily consists of three sections: (1) The `neighbor_list` function, which generates a list of atom pairs that are close enough to be considered interacting, (2) a `forces` function, which calculates all contributions to the forces from the pairs in the neighbor list, and (3) the `md` function, which runs the calculation by calling `neighbor_list` and `forces` and then updating the atomic coordinates each timestep.
 
@@ -539,7 +538,7 @@ Note that the force evaluation is handled via an iterator over the neighbor list
     }
 ```
 
-Loops with iterators are a little awkward to parallelize.
+Loops with iterators are a little awkward to parallelize with OpenMP.
 The approach we will take is to create a separate neighborlist for each thread.
 First, define a `thrneighT` type, which will be a vector of neighborlists (add this near the beginning of `md.cc`, with the other typdefs).
 
@@ -597,6 +596,9 @@ void optimize(coordT& coords, thrneighT& thrneigh) {
         double virial_step;
         f = forces(thrneigh,coords,virial_step,potential_energy);
 ```
+
+>    30.00     3973.40320   -19398.90856  -15425.50536    0.495   0.03703538  \
+times:  force=14.50s  neigh=18.06s  total=32.67s
 
 We are finally ready to work on parallelization of the `forces` subroutine.
 Replacing the outer `for` loop in `forces` is easy enough:
@@ -660,9 +662,10 @@ Then, `just before` the end of the OpenMP block, write the following:
       }
 ```
 
-Running on four threads, this gives substantially improved performance for the forces:
+Running on four threads, this gives improved performance for the forces:
 
->times:  force=3.66s  neigh=7.00s  total=10.82s
+>    30.00     3973.40314   -19398.90851  -15425.50536    0.495   0.03703538  \
+times:  force=7.03s  neigh=18.99s  total=26.23s\
 
 Now let's work on the `neighbor_list` function.
 Once again, we will convert the `for` loop over `thrneigh` into an OpenMP parallelized region.
@@ -678,11 +681,11 @@ Once again, we will convert the `for` loop over `thrneigh` into an OpenMP parall
 
 This improves the neighborlist creation time substantially:
 
->times:  force=3.66s  neigh=2.17s  total=5.98s
+>times:  force=3.67s  neigh=6.65s  total=10.49s
 
-Running on 64 threads, we get this:
+Running on 16 threads, we get this:
 
->times:  force=1.12s  neigh=0.31s  total=1.60s
+>times:  force=1.58s  neigh=2.26s  total=4.03s
 
 One issue that limits our performance at high thread counts is the fact that we are not doing anything to `load balance` the neighborlist across threads.
 We can improve the load balancing by adding some code to ensure that each thread has a neighborlist of similar length.
@@ -716,7 +719,7 @@ Add the following just before the end of the OpenMP parallelized block in `neigh
 
 Unfortunately, this really doesn't help our timings:
 
->times:  force=1.30s  neigh=57.78s  total=59.25s
+>times:  force=1.59s  neigh=2.37s  total=4.15s
 
 The problem is that the added code does lots of operations that resize the neighborlists, which is a slow operation on a C++ `list` type.
 To fix this, change the `neighT` type to be a vector:
@@ -733,4 +736,4 @@ Then, add the following to the `neighbor_list` function, just after the `neigh.c
 
 These changes allow us to get our best timings yet:
 
->times:  force=1.22s  neigh=0.12s  total=1.47s
+>times:  force=1.55s  neigh=1.54s  total=3.27s
