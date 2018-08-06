@@ -195,24 +195,24 @@ Open `example2.cpp` using a text editor, and add the following to the beginning 
 Now add the following to the end of main:
 
 ``` cpp
-  printf("Total time: %f",omp_get_wtime()-start_time);
+  printf("Total time: %f\n",omp_get_wtime()-start_time);
 ```
 
 The code should now output the total about of time required to run:
 
 >Average: 500000001.500000\
-Total time: 16.082229
+Total time: 6.816225
 
 Add similar timing statements around each of the `for` loops.
 This should produce output similar to the following:
 
->Initialize a time: 1.100083\
-Initialize b time: 2.558985\
-Add arrays time: 0.731854\
-Average result time: 0.901738\
+>Initialize a time: 1.402934\
+Initialize b time: 4.077723\
+Add arrays time: 0.900899\
+Average result time: 0.381398\
 \
 Average: 500000001.500000\
-Total time: 5.338318
+Total time: 6.781963
 
 Let's start by parallelizing the loop that adds arrays `a` and `b`.
 
@@ -222,7 +222,33 @@ Let's start by parallelizing the loop that adds arrays `a` and `b`.
   }
 ```
 
-INSERT MANUAL PARALLELIZATION
+Parallelize this loop in the following way:
+
+``` cpp
+#pragma omp parallel
+{
+  int i;
+  int id;
+  int nthreads;
+  int istart;
+  int iend;
+  int Nthr;
+
+  id = omp_get_thread_num();
+  nthreads = omp_get_num_threads();
+
+  Nthr = N / nthreads;
+  istart = id * Nthr;
+  iend = (id+1) * Nthr;
+  if (id == nthreads-1) iend = N;
+
+  for (i=istart; i<iend; i++) {
+    a[i] = a[i] + b[i];
+  }
+}
+```
+
+>Add arrays time: 0.348737
 
 A much easier way to parallelize this loop is to say:
 
@@ -233,24 +259,25 @@ A much easier way to parallelize this loop is to say:
   }
 ```
 
->Add arrays time: 0.406463
+>Add arrays time: 0.328928
 
 Now we will parallelize the loop that averages the result.
 
 ``` cpp
+#pragma omp parallel for
   for (int i=0; i<N; i++) {
     average += a[i];
   }
   average = average/double(N);
 ```
 
->Initialize a time: 1.081612\
-Initialize b time: 2.550393\
-Add arrays time: 0.393584\
-Average result time: 0.232804\
+>Initialize a time: 1.397873\
+Initialize b time: 4.076062\
+Add arrays time: 0.342933\
+Average result time: 0.123558\
 \
-Average: 31250000.375000\
-Total time: 4.303908
+Average: 156250000.375000\
+Total time: 5.960761
 
 This made the loop finish more quickly, but it also changed the final result.
 What happened?
@@ -267,13 +294,13 @@ This is known as a reduction operation, and we can tell the compiler that this i
   average = average/double(N);
 ```
 
->Initialize a time: 1.084566\
-Initialize b time: 2.557586\
-Add arrays time: 0.400930\
-Average result time: 0.233017\
+>Initialize a time: 1.383079\
+Initialize b time: 4.074402\
+Add arrays time: 0.346857\
+Average result time: 0.123527\
 \
 Average: 500000001.500000\
-Total time: 4.321464
+Total time: 5.948352
 
 We've made some nice improvements to a couple of the loops, but the real bottlenect happens when `a` and `b` are initialized.
 We will now work on the loop that initializes `a`.
@@ -286,13 +313,13 @@ Start by adding an OpenMP pragma:
   }
 ```
 
->Initialize a time: 1.598507\
-Initialize b time: 2.556661\
-Add arrays time: 0.347225\
-Average result time: 0.234209\
+>Initialize a time: 0.391194\
+Initialize b time: 4.439494\
+Add arrays time: 0.296057\
+Average result time: 0.105363\
 \
 Average: 500000001.500000\
-Total time: 4.783023
+Total time: 5.252643
 
 Now do the same thing to b:
 
@@ -302,17 +329,16 @@ Now do the same thing to b:
     b[i] = 1.0 + double(i);
   }
 ```
-
->Initialize a time: 1.566816\
-Initialize b time: 2.760745\
-Add arrays time: 0.346645\
-Average result time: 0.233726\
+Initialize a time: 0.344843\
+Initialize b time: 0.350311\
+Add arrays time: 0.188084\
+Average result time: 0.085440\
 \
 Average: 500000001.500000\
-Total time: 4.953596
+Total time: 0.987741
 
 Notice that now even the last two loops are faster.
-This is because of the principle of first touch.
+This is because of the principle of `first touch`.
 
 ## Example 3
 
