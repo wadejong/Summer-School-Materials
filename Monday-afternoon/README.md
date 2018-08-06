@@ -11,14 +11,14 @@ $ cd example1
 
 If you open `example1.cpp` with a text editor, you will see that it is a simple Hello World code.
 
-~~~
+```
 #include <stdio.h>
 
 void main()
 {
   printf("Hello World\n");
 }
-~~~
+```
 
 Go ahead and build the code.
 
@@ -48,7 +48,7 @@ The directive `#pragma omp parallel` tells the compiler that the next block of c
 We are going to parallelize the line with the `printf`, so put curly brackets around that line in order to make it a distinct block of text, then put `#pragma omp parallel` before the block.
 Your code should look like:
 
-~~~
+```
 #include <stdio.h>
 #include <omp.h>
 
@@ -59,7 +59,7 @@ void main()
     printf("Hello World\n");
   }
 }
-~~~
+```
 
 We need to tell the compiler that we are using OpenMP.
 Open `Makefile` and add the `-qopenmp` flag to `CXXFLAGS`:
@@ -105,7 +105,7 @@ Each of the four OpenMP threads that we specified with `OMP_NUM_THREADS` execute
 We will now edit the code so that each time `Hello World!` is printed we are told which of the threads is responsible.
 Open `example1.cpp` and edit code to read:
 
-~~~
+```
 #include <stdio.h>
 #include <omp.h>
 
@@ -117,8 +117,7 @@ void main()
     printf("Hello World! (%i)\n", thread_id);
   }
 }
-~~~
-{: .bash}
+```
 
 Compile and run the code:
 
@@ -143,7 +142,7 @@ The order in which the threads finish determines the order in which the messages
 Let's play around with these threads some more.
 We will add another `printf` after the OpenMP-parallelized block, followed by a third `printf` inside a new OpenMP-parallelized block.
 
-~~~
+```
 #include <stdio.h>
 #include <omp.h>
 
@@ -164,7 +163,7 @@ void main()
     printf("Goodbye World! (%i)\n", thread_id);
   }
 }
-~~~
+```
 
 If you compile and run this code, you should get something like
 
@@ -220,15 +219,15 @@ To learn this, we will add some extra code to time each calculation.
 
 Open `example2.cpp` using a text editor, and add the following to the beginning of `main`:
 
-~~~
+```
   double start_time = omp_get_wtime();
-~~~
+```
 
 Now add the following to the end of main:
 
-~~~
+```
   printf("Total time: %f",omp_get_wtime()-start_time);
-~~~
+```
 
 The code should now output the total about of time required to run:
 
@@ -254,22 +253,22 @@ Total time: 5.338318
 
 Let's start by parallelizing the loop that adds arrays `a` and `b`.
 
-~~~
+```
   for (int i=0; i<N; i++) {
     a[i] = a[i] + b[i];
   }
-~~~
+```
 
 INSERT MANUAL PARALLELIZATION
 
 A much easier way to parallelize this loop is to say:
 
-~~~
+```
 #pragma	omp parallel for
   for (int i=0; i<N; i++) {
     a[i] = a[i] + b[i];
   }
-~~~
+```
 
 ~~~
 Add arrays time: 0.406463
@@ -278,12 +277,12 @@ Add arrays time: 0.406463
 
 Now we will parallelize the loop that averages the result.
 
-~~~
+```
   for (int i=0; i<N; i++) {
     average += a[i];
   }
   average = average/double(N);
-~~~
+```
 
 ~~~
 Initialize a time: 1.081612
@@ -303,13 +302,13 @@ The problem is that each thread works on its own copy of the `average` variable.
 We want the loop to calculate the total value of `average`, summed across all threads.
 This is known as a reduction operation, and we can tell the compiler that this is what we want by adding a `reduction` clause to the `pragma`:
 
-~~~
+```
 #pragma omp parallel for reduction(+:average)
   for (int i=0; i<N; i++) {
     average += a[i];
   }
   average = average/double(N);
-~~~
+```
 
 ~~~
 Initialize a time: 1.084566
@@ -326,12 +325,12 @@ We've made some nice improvements to a couple of the loops, but the real bottlen
 We will now work on the loop that initializes `a`.
 Start by adding an OpenMP pragma:
 
-~~~
+```
 #pragma	omp parallel for
   for (int i=0; i<N; i++) {
     a[i] = 1.0;
   }
-~~~
+```
 
 ~~~
 Initialize a time: 1.598507
@@ -346,12 +345,12 @@ Total time: 4.783023
 
 Now do the same thing to b:
 
-~~~
+```
 #pragma	omp parallel for
   for (int i=0; i<N; i++) {
     b[i] = 1.0 + double(i);
   }
-~~~
+```
 
 ~~~
 Initialize a time: 1.566816
@@ -397,7 +396,7 @@ Timings:
 
 Clearly, the most expensive part of the code is the region where the forces are calculated, which consists of a double loop over all particles.
 
-~~~
+```
   start_loop = omp_get_wtime();
   double v = 0.0;
   for (int i=0; i < natoms; i++) {
@@ -416,18 +415,18 @@ Clearly, the most expensive part of the code is the region where the forces are 
     }
   }
   *potential = v;
-~~~
+```
 
 One approach to speeding this code up would be to add OpenMP parallelization to the inner loop, like this:
 
-~~~
+```
   for (int i=0; i < natoms; i++) {
 #pragma omp parallel for reduction(+:v)
     for (int j=i+1; j < natoms; j++) {
        ...
     }
   }
-~~~
+```
 
 ~~~
 Iteration: 999      Energy: 211062.450046      PE: 5124.896336
@@ -455,7 +454,7 @@ One way to eliminate the race condition is to switch from looping over "unique p
 This way, we don't need to update `forces[i][0]` at all, only `forces[j][0]`.
 The modified code looks like:
 
-~~~
+```
   double v = 0.0;
   for (int i=0; i < natoms; i++) {
 #pragma omp parallel for reduction(+:v)
@@ -476,7 +475,7 @@ The modified code looks like:
     }
   }
   *potential = v;
-~~~
+```
 
 The main differences here are: (1) we changed the starting value of `j` from `i+1` to `0`, (2) we commented out the updates to `forces[i]`, (3) we multiple all contributions to `v` by `0.5` to avoid a double-counting error, and (4) we add an `if` check to avoid the `i == j` case.
 This code produces the correct result while also being substantially faster.
@@ -503,7 +502,7 @@ That isn't ideal - it is likely that a decent amount of that time is just `fork`
 
 We can improve things by moving the parallelization to the outer loop over `i`.
 
-~~~
+```
 #pragma omp parallel for reduction(+:v)
   for (int i=0; i < natoms; i++) {
     for (int j=0; j < natoms; j++) {
@@ -520,7 +519,7 @@ We can improve things by moving the parallelization to the outer loop over `i`.
         v += 0.5/dr;
     }
   }
-~~~
+```
 
 ~~~
 Iteration: 999      Energy: 92079.129718      PE: 16253.127101
@@ -585,25 +584,25 @@ The code primarily consists of three sections: (1) The `neighbor_list` function,
 
 Note that the force evaluation is handled via an iterator over the neighbor list:
 
-~~~
+```
     for (neighT::const_iterator ij=neigh.begin(); ij!=neigh.end(); ++ij) {
        ...
     }
-~~~
+```
 
 Loops with iterators are a little awkward to parallelize.
 The approach we will take is to create a separate neighborlist for each thread.
 First, define a `thrneighT` type, which will be a vector of neighborlists (add this near the beginning of `md.cc`, with the other typdefs).
 
-~~~
+```
 typedef std::vector<neighT> thrneighT;
-~~~
+```
 
 Then create a `thrneighT` which will contain all of the neighborlists for all of the threads.
 Where appropriate, change `neighT` and `neigh` to `thrneighT` and `thrneigh`, respectively.
 Here are the locations where these changes need to be made:
 
-~~~
+```
 void neighbor_list(const coordT& coords, thrneighT& thrneigh) {
     double start = omp_get_wtime();
     for (int ithr=0; ithr<thrneigh.size(); ithr++) {
@@ -648,28 +647,28 @@ void optimize(coordT& coords, thrneighT& thrneigh) {
 
         double virial_step;
         f = forces(thrneigh,coords,virial_step,potential_energy);
-~~~
+```
 
 We are finally ready to work on parallelization of the `forces` subroutine.
 Replacing the outer `for` loop in `forces` is easy enough:
 
-~~~
+```
 #pragma	omp parallel default(none) shared(f, thrneigh, coords, virial, pe)
     {
        int ithr = omp_get_thread_num();
        const neighT& neigh = thrneigh[ithr];
        ...
     }
-~~~
+```
 
 Unfortunately, there is one significant problem: the forces are incremented in a way that introduces a race condition.
 
-~~~
+```
           f[i].first += dfx;
           f[j].first -= dfx;
           f[i].second += dfy;
           f[j].second -= dfy;
-~~~
+```
 
 Unlike the case with `Example 3`, it isn't straightforward to restructure the force evaluation in such a way that the forces on each atom are calculated by only one thread.
 Instead, we will have each thread calculate some portion of the forces on all of the atoms, then perform a `reduction` operation on the forces.
@@ -678,7 +677,7 @@ As a result, we must perform the reduction manually.
 
 To reduce the forces, first declare an array that will store the forces for a single thread.
 
-~~~
+```
 #pragma	omp parallel default(none) shared(f, thrneigh, coords, virial, pe)
     {
       coordT f_thread(natom,xyT(0.0,0.0));
@@ -696,11 +695,11 @@ To reduce the forces, first declare an array that will store the forces for a si
 	}
       }
     }
-~~~
+```
 
 Then, `just before` the end of the OpenMP block, write the following:
 
-~~~
+```
 #pragma omp critical
       {
         for (int i=0; i<natom; i++) {
@@ -710,7 +709,7 @@ Then, `just before` the end of the OpenMP block, write the following:
 	pe += pe_thread;
 	virial += virial_thread;
       }
-~~~
+```
 
 Running on four threads, this gives substantially improved performance for the forces:
 
@@ -722,14 +721,14 @@ times:  force=3.66s  neigh=7.00s  total=10.82s
 Now let's work on the `neighbor_list` function.
 Once again, we will convert the `for` loop over `thrneigh` into an OpenMP parallelized region.
 
-~~~
+```
 #pragma omp parallel default(none) shared(thrneigh, coords)
     {
         int ithr = omp_get_thread_num();
 	int nthread = omp_get_num_threads();
 	...
     }
-~~~
+```
 
 This improves the neighborlist creation time substantially:
 
@@ -749,7 +748,7 @@ One issue that limits our performance at high thread counts is the fact that we 
 We can improve the load balancing by adding some code to ensure that each thread has a neighborlist of similar length.
 Add the following just before the end of the OpenMP parallelized block in `neighbor_list`:
 
-~~~
+```
 #pragma omp barrier
 #pragma omp single
         {
@@ -773,7 +772,7 @@ Add the following just before the end of the OpenMP parallelized block in `neigh
             }
           }
         }
-~~~
+```
 
 Unfortunately, this really doesn't help our timings:
 
@@ -785,15 +784,15 @@ times:  force=1.30s  neigh=57.78s  total=59.25s
 The problem is that the added code does lots of operations that resize the neighborlists, which is a slow operation on a C++ `list` type.
 To fix this, change the `neighT` type to be a vector:
 
-~~~
+```
 typedef std::vector<pairT> neighT;
-~~~
+```
 
 Then, add the following to the `neighbor_list` function, just after the `neigh.clear();` line:
 
-~~~
+```
         neigh.reserve(100*natom/nthread);
-~~~
+```
 
 These changes allow us to get our best timings yet:
 
