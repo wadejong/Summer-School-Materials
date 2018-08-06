@@ -159,11 +159,48 @@ We used four processes on the local machine (e.g., your laptop or the cluster lo
 
 Here's an example batch job (`mpihello.pbs`) for SeaWulf annotated so show what is going on:
 ~~~
+    #!/bin/bash
+    #PBS -l nodes=2:ppn=24,walltime=00:02:00
+    #PBS -q molssi
+    #PBS -N hello
+    #PBS -j oe
 
+    # Above says:
+    # - job has 2 (dedicated) nodes with 24 processes per node with a 2 minute max runtime
+    # - use the molssi queue
+    # - name the job "hello"
+    # - merge the standard output and error into one file
+
+    # Output should appear in the file "<jobname>.o<jobnumber>" in the
+    # directory from which you submitted the job
+
+    # ================================================
+    # If this is not in your .bashrc it needs to be here so that your job
+    # uses the same compilers/libraries that you compiled with
+    source /gpfs/projects/molssi/modules-intel
+
+    # This will change to the directory from which you submitted the job
+    # which we assume below is the one holding the executable
+    cd $PBS_O_WORKDIR
+
+    # Uncomment this if you want to see other PBS environment variables
+    # env | grep PBS
+
+    # Finally, run the executable using $PBS_NUM_NODES*$PBS_NUM_PPN
+    # processes spread across all the nodes
+    mpirun ./mpihello
+
+    # You can run more things below
 ~~~
 But I find the comments distracting, so here is a minimal version.
 ~~~
+     #!/bin/bash
+     #PBS -l nodes=2:ppn=24,walltime=00:02:00
+     #PBS -q molssi -N hello -j oe
 
+     source /gpfs/projects/molssi/modules-intel
+     cd $PBS_O_WORKDIR
+     mpirun ./mpihello
 ~~~
 You can copy and edit the file for your other jobs.  Note that other other systems running PBS will differ.
 
