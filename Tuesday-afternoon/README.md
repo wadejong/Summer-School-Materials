@@ -8,20 +8,39 @@
 1.  Hello world in *just* 20 minutes
 1.  Sending messages between processes
 1.  Global operations
-1.  Review of the 6-8 essentail MPI operations
+1.  Review of the 6-8 essential MPI operations
 1.  Communicators and groups
 1.  Reasoning about performance
 1.  Debugging, etc.
 1.  Additional material
 1.  Exercises
-1.  Review of exercise solutions
   
 ## 2. Big picture
 
-**to be completed**
+Motivations:
+* Performance
+* Price-performance
+* Correctness
 
+The only cost-effective path to massive performance is connecting together multiple commodity computers via a high-performance network.  In present technologies each computer will contain multiple CPUs (cores) that share memory. They might also contain GPUs or other accelerators.
 
 ![distmem](images/hybrid_mem.gif  "Distributed memory")
+
+We wish to program this cluster of computers to collaborate in the solution of a single science problem.  The challenge is that the processes do not share any memory (the memory and the data it contains is distributed across the cluster), and potentially not even a file system.  This is a classic problem in concurrent systems, and the communicating sequential processes (CSP; see references below) model provides rigorous solution with provable properties.
+
+The essential idea is exactly how a team of humans distribute across the planet would solve a problem via email --- they would send messages to each other or the whole team until everyone had the data they needed to solve their part of the problem.  Partial or full results would be similarly communicated.  By formalizing this approach and introducing concepts such as ordering and message types, CSP enables certain styles of writing message programs to be proven to be correct and safe (such as in the sense of needing bounded buffers).
+
+Moreover, message-passing programs are intrinsically safer and in some sense easier to write than shared-memory programs.  In a shared-memory program any process/thread can modify any shared data at any time.  It takes substantial programmer discipline and good design to avoid race conditions and myriad other bugs and performance problems.  In contrast, in a message-passing program no data is shared and so there are no such problems.
+
+Finally, even within a shared-memory computers a message-passing program can sometimes run faster than a shared-memory program.  This is because it is expensive (in time and energy) to share data between processes and it is hard to deisgn a shared-memory program that minimizes the amount of data being touched by multiple processes.  In contrast, a message-passing program shares no data, and all memory references are local to that process.  Indeed, a high-performance shared-memory program can sometimes start to resemble a message-passing program.
+
+MPI is now the defacto standard for message passing in high-performance computing, with multiple implementations from the community and computer vendors.
+
+References:
+* CSP --- https://en.wikipedia.org/wiki/Communicating_sequential_processes
+* CSP --- http://www.usingcsp.com/cspbook.pdf
+* MPI standard --- https://www.mpi-forum.org/docs/
+
 
 ## 3. Useful links
 
@@ -100,8 +119,8 @@ The new version (`mpihello.cc`) looks like this
 
 Build your parallel version with `make mpihello1` or `mpiicpc -o mpihello1 mpihello1.cc`
 
-* MPI provides wrappers for compiling and linking programms because there's a lot of machine specific stuff that must be done.
-* For the summer school we are using the Intel C++ compiler and MPI library so we use the command `mpiicpc` (`mpiifort` for the Intel fortran, `mpiicc` for Intel C) but more commonly you might be using the GNU stack (`mpicxx`, `mpicc`, `mpifort`, etc.)
+* MPI provides wrappers for compiling and linking programs because there's a lot of machine specific stuff that must be done.
+* For the summer school we are using the Intel C++ compiler and MPI library so we use the command `mpiicpc` (`mpiifort` for the Intel FORTRAN, `mpiicc` for Intel C) but more commonly you might be using the GNU stack (`mpicxx`, `mpicc`, `mpifort`, etc.)
 
 ### Running MPI programs
 
@@ -133,7 +152,7 @@ We used four processes on the local machine (e.g., your laptop or the cluster lo
 
 **EXAMPLE BATCH JOB HERE**
 
-You can also provide to `mpirun` a hostfile that tells it which computers to use --- on most clusters this is rarely neccessary.
+You can also provide to `mpirun` a hostfile that tells it which computers to use --- on most clusters this is rarely necessary.
 
 
 ### Some mpirun options
@@ -177,7 +196,7 @@ But messages from multiple processes can be interleaved with each other.
 ```
     int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status)
 ```
-* `buf` --- pointer to the start of the buffer to recieve the message
+* `buf` --- pointer to the start of the buffer to receive the message
 * `count` --- maximum number of elements the buffer can hold
 * `datatype` --- MPI data type of each element
 * `source` --- rank of source process ---  `MPI_ANY_SOURCE` matches any process
@@ -283,7 +302,7 @@ Many chemistry, materials, and biophysics applications are written without using
 2. Reduction
 3. Barrier
 3. Gather and scatter
-4. Non-blocking communication
+4. Non-blocking globals
 5. Other communication modes (synchronous send, buffered send)
 
 **to be completed**
@@ -313,9 +332,17 @@ Or eight if you include
 
 ##  Debugging, etc.
 
+
 **to be added**
 
-##  Additional material
+##  Additional concepts and material
 
-**to be added*
+* Inter communicators
+* Toplogies
+* 
 
+**to be added**
+
+## Exercises
+
+**to be added**
