@@ -25,19 +25,19 @@ int main()
 Go ahead and build the code.
 
 ~~~
-$ make
+> $ make
 ~~~
 {: .bash}
 
 You could run the code just by typing `example1` into the command line, but there is also a simple script that does the same thing.
 Run the script now.
 
-~~~
+~~~~
 $ qsub run.sh
-~~~
+~~~~
 {: .bash}
 
-~~~
+> ~~~
 Hello World!
 ~~~
 {: .output}
