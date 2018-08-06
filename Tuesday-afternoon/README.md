@@ -279,6 +279,7 @@ The actual source, count and tag of the received message can be accessed from th
 ```
 
 There's data types for everything, and you can define you own including non-contiguous data structures:
+
 |**MPI data type**  |**C data type**     |
 |:------------------|:-------------------|
 |MPI_BYTE           |8 binary digits     |
