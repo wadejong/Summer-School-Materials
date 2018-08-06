@@ -22,5 +22,6 @@
     * Illustrates basic use of broadcast+reduce, parallelization of a for loop, distributed logic
 * `pi_seq.cc` --- sequential version of Monte Carlo calculation of PI
     * Starting point for exploring basic use of broadcast+reduce, and parallelization of a for loop
-
-
+* `client-server.cc` --- simple client-server model for a shared counter
+    * Illustrates use of wild card receive and client-server model
+* `recursive.cc` --- sequential version of adaptive quadrature
