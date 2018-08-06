@@ -392,19 +392,14 @@ Or eight if you include
 
 Essential concepts to reason about the performance of your message passing application
 
-* Amdahl's law
+* Amdahl's law, speed up and efficiency
 
-* Speed up and efficiency
+* Weak and strong scaling
 
-* Load balance
-
-* Data balance
-
-* Data distribution
+* Load balance, data balance, hot spots
 
 * Latency and bandwidth of communication
 
-* Weak and strong scaling
 
 
 ### Amdahl's law
@@ -413,15 +408,22 @@ Essential concepts to reason about the performance of your message passing appli
 
 <img src="https://latex.codecogs.com/svg.latex?\Large&space;T(P)=Ts+\frac{Tp}{P}" title="Amdahl" />
 
-The speedup is the ratio of sequential to parallel execution time
+Speedup is the ratio of sequential to parallel execution time (whereas efficiency is the ratio of the ideal speedup, *P*, and the actual speedup)
 
 <img src="https://latex.codecogs.com/svg.latex?\Large&space;S(P)=\frac{Ts+Tp}{Ts+\frac{Tp}{P}}" title="Amdahl" />
 
-and you can see that (assuming *Tp>>Ts*) the maximum speed up is *Tp/Ts*.  I.e., to get a speedup of 100, 99% of your work must run perfectly parallel.  To get a speedup of 1000,000  (the size of modern supercomputers) 99.9999% perfect parallelism is necessary.   Bear this in mind when setting performance goals and expectations.
+You can see that (assuming *Tp>>Ts*) the maximum speed up is *Tp/Ts*.  I.e., to get a speedup of 100, 99% of your work must run perfectly parallel.  To get a speedup of 1,000,000  (the size of modern supercomputers) 99.9999% perfect parallelism is necessary.   Bear this in mind when setting performance goals and expectations.
+
+For these reasons the concepts of strong and weak scaling were introduced.
+* Strong scaling: An application shows good strong scaling if for a fixed problem size it shows a near ideal (linear in *P*) speedup.  This is hard!
+* Weak scaling: ...
+
+**to be finished**
 
 
+### Load, data balance and hot spots
 
-
+Further limiting performance is the assumption of perfect parallelism.  It is very hard to distribute work (a.k.a. load balance) across all of the processes.
 
 ##  Debugging, etc.
 
