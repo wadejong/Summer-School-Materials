@@ -106,8 +106,9 @@ Build the sequential version with `make hello` or `icpc -o hello hello.cc`.
 * Note how MPI wants access to the command line arguments (so we must modify the signature of `main`). You can use `NULL` instead of `argv` and `argc` but passing arguments to MPI is very useful.
 
 ### Error detection and exit
-* MPI functions return `MPI_SUCCESS` on success or an error code (see documentation) on failure.
-* To abort execution you cannot just `exit` or `return` because there's lots of clean up that needs to be done when running in parallel --- a poorly managed error can easily waste 1000s of hours of computer time.
+* MPI functions return `MPI_SUCCESS` on success or an error code (see documentation) on failure depending on how errors are handled.
+* By default errors abort (i.e., the error handler is `MPI_ERRORS_ARE_FATAL`).  If you want MPI to return errors for you to handle, you can call `MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN)`.
+* To abort execution you cannot just `exit` or `return` because there's lots of clean up that needs to be done when running in parallel --- a poorly managed error can easily waste 1000s of hours of computer time.  You must call `MPI_Abort` to exit with an error code.
 
 
 The new version (`mpihello.cc`) looks like this
@@ -363,7 +364,7 @@ Write a program to send an integer (`=99`) around a ring of processes (i.e., `0`
 
 ## 5. Global operations
 
-Many chemistry, materials, and biophysics applications are written without using any point-to-point communication routines.
+Many chemistry, materials, and biophysics applications are written without using any point-to-point communication routines.  
 
 ### Essential elements
 1. Broadcast
@@ -373,7 +374,7 @@ Many chemistry, materials, and biophysics applications are written without using
 4. Non-blocking globals
 5. Other communication modes (synchronous send, buffered send)
 
-**to be completed**
+### Broadcast
 
 ### Another minimal set of six operations
 
@@ -428,7 +429,7 @@ Further limiting performance is the assumption of perfect parallelism.  It can b
 
 Data distribution can also be a challenge.  The finite memory of each node is one constraint.  Another is that all of the data needed by a task must be brought together for it to be executed.  A non-uniform data distribution can also lead to communication hot spots (processors that must send/recv a lot of data) or hot links (wires in the network that are heavily used to transmit data).  This last point highlights the role of network topology --- the communication pattern of your application is mapped onto the wiring pattern (toplogy) of your network.  A communication intensive application may be sensive to this mapping, and MPI provides some assistance for this (e.g., see [here](http://wgropp.cs.illinois.edu/courses/cs598-s16/lectures/lecture28.pdf)).  See also bisection bandwidth below.
 
-The performance impact of load balance will become apparent at synchronization points (e.g., blocking global communications) where all processes must wait for the slowest one to catch up.
+The performance impact of poor load balance will become apparent at synchronization points (e.g., blocking global communications) where all processes must wait for the slowest one to catch up.
 
 ### Latency and bandwidth
 
@@ -442,12 +443,11 @@ An important and easy to remember value is *N1/2*, which is the message length n
 
 <img src="https://latex.codecogs.com/svg.latex?\Large&space;N&#95;{1/2}=LB" title="Nhalf" />
 
-Inserting *L*=10us and *B*=10Gbyte/s, we obtain *N1/2*=100000bytes.  For many science applications this is a long message.  You can derive similar a similar formula for the length necessary to acheive 90% peak bandwith.
+Inserting *L*=1us and *B*=10Gbyte/s, we obtain *N1/2*=10000bytes.  You can derive similar a similar formula for the length necessary to acheive 90% peak bandwith.
 
-Bisection bandwidth is another important concept.  Divide your parallel machine in two halves so as to give the worst possible bandwidth connecting the halves.  This is the bisection bandwidth, which you can derive by counting the number of wires that you cut.  If your communication pattern is not local but is uniform and does not have any hot spots (think uniform and random), your effective bandwidth is the bisection bandwidth divided by the number of processes.  This can be much smaller than the bandwidth obtained by a single message on a quiet machine.  Thus, the communication intensity of your application is important.  Spreading communication over larger period of time is a possible optimization.
+Bisection bandwidth is another important concept especially if you are doing a lot of communication all at once.  Divide your parallel machine in two halves so as to give the worst possible bandwidth connecting the halves.  This is the bisection bandwidth, which you can derive by counting the number of wires that you cut.  If your communication pattern is not local but is uniform and does not have any hot spots (think uniform and random), your effective bandwidth is the bisection bandwidth divided by the number of processes.  This can be much smaller than the bandwidth obtained by a single message on a quiet machine.  Thus, the communication intensity of your application is important.  Spreading communication over a larger period of time is a possible optimization.
 
 For global communication, the details are more complicated because a broadcast or reduction is executed on an MPI-implementation-specific tree of processes that is mapped to the underlying network topology.  However, for long messages an optimized implementation should be able to deliver similar bandwidth to that of the point-to-point communication, with a latency that grows roughly logarithmically with the number of MPI processes.
-
 
 ##  Debugging
 
@@ -457,14 +457,16 @@ There are some powerful visual parallel debuggers that understand MPI, but since
 
 * Other MPI implementations have other mechanisms.  E.g., see here for [OpenMPI debugging](https://www.open-mpi.org/faq/?category=debugging).
 
-* A more portable solution that assumes the processes can create an X-window on your computer is `mpirun -np 2 xterm -e gdb executable` which creates an `xterm` for each process in your application.  This works great for a few processes, but does not scale and it can be complicated to get X-windows to work thru firewalls, etc.
+* A more portable solution that assumes the MPI processes can create an X-window on your computer is `mpirun -np 2 xterm -e gdb executable` which creates an `xterm` for each process in your application.  This works great for a few processes, but does not scale and it can be complicated to get X-windows to work thru firewalls, etc.
 
 ## 7. Work and data distribution strategies
 
-* counter
+* partitioning the iterations of an outer loop
+* using a counter to distribute the iterations of a nest of loops
+* master slave model
+* replicated vs. distributed data
 * systolic loop
 * reading about parallel mxm
-
 
 **to be added**
 
@@ -479,4 +481,4 @@ There are some powerful visual parallel debuggers that understand MPI, but since
 
 ## Exercises
 
-**to be added**
+
