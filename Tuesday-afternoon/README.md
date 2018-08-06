@@ -11,6 +11,7 @@
 1.  Review of the 6-8 essential MPI operations
 1.  Communicators and groups
 1.  Reasoning about performance
+1   Work distribution strategies
 1.  Debugging, etc.
 1.  Additional material
 1.  Exercises
@@ -28,7 +29,7 @@ The only cost-effective path to massive performance is connecting together multi
 
 ![distmem](images/hybrid_mem.gif  "Distributed memory")
 
-We wish to program this cluster of computers to collaborate in the solution of a single science problem.  The challenge is that the processes do not share any memory (the memory and the data it contains is distributed across the cluster), and potentially not even a file system.  This is a classic problem in concurrent systems, and the communicating sequential processes (CSP; see references below) model provides a rigorous solution with provable properties.
+We wish to program this cluster of computers to collaborate in the solution of a single science problem.  The challenge is that the processes do not share any memory (the memory and the data it contains is distributed across the cluster), and potentially not even a file system.  This is a classic problem in concurrent systems, and the communicating sequential processes (CSP; see references below) model provides a rigorous solution with provable properties.  Sometimes performance is not our only concern --- for instance, you might have a problems with a massive amount of data that could be enabled by the aggregate memory of a cluster.
 
 The essential idea is exactly how a team of humans distributed across the planet would solve a problem via email --- they would send messages to each other or the whole team until everyone had the data they needed to solve their part of the problem.  Partial or full results would be similarly communicated.  By formalizing this approach and introducing concepts such as ordering and message types, CSP enables certain styles of writing message programs to be proven to be correct and safe (such as in the sense of needing bounded buffers).
 
@@ -41,11 +42,15 @@ The Message Passing Interface (MPI) is now the defacto standard for message pass
 The objective of this brief tutorial is to introduce key elements of MPI and its practical use within the molecular sciences.
 
 References:
-* CSP --- https://en.wikipedia.org/wiki/Communicating_sequential_processes
+* [CSP Wikipedia](https://en.wikipedia.org/wiki/Communicating_sequential_processes)
 
-* CSP --- http://www.usingcsp.com/cspbook.pdf
+* [CSP Hoare book](http://www.usingcsp.com/cspbook.pdf)
 
-* MPI standard --- https://www.mpi-forum.org/docs/
+* [MPI documentation](https://www.mpi-forum.org/docs/) from MPICH team
+
+* [Seawulf HPC FAQ etc.](https://it.stonybrook.edu/services/high-performance-computing)
+
+* [Seawulf getting started guide](https://it.stonybrook.edu/help/kb/getting-started-guide)
 
 
 ## 3. Useful links
@@ -96,7 +101,7 @@ Build the sequential version with `make hello` or `icpc -o hello hello.cc`.
     MPI_Finalize();
 ```
 * Initializing MPI gives us access to the default communicator (`MPI_COMM_WORLD`)
-    * An intra communicator encapsulates all information and resources needed for a group of processes to communicate with each other
+    * An intra communicator encapsulates all information and resources needed for a group of processes to communicate with each other.  For our simple applications we will always being `MPI_COMM_WORLD` but for real applications you should be passing a communicator into all of your routines to enable reuse and interoperability.
     * We will look at communicators in more detail soon --- for now we just need to get the number of processes and the rank (`0,1,2,...`) of the current process.
 * Note how MPI wants access to the command line arguments (so we must modify the signature of `main`). You can use `NULL` instead of `argv` and `argc` but passing arguments to MPI is very useful.
 
@@ -400,8 +405,6 @@ Essential concepts to reason about the performance of your message passing appli
 
 * Latency and bandwidth of communication
 
-
-
 ### Amdahl's law
 
 [Ahdahl's law](https://en.wikipedia.org/wiki/Amdahl%27s_law) is both simple and brutal.  Dividing the execution time into a sequential component (*Ts*) and perfectly parallel program (*Tp*) the execution time on *P* processes is then
@@ -415,23 +418,38 @@ Speedup is the ratio of sequential to parallel execution time (whereas efficienc
 You can see that (assuming *Tp>>Ts*) the maximum speed up is *Tp/Ts*.  I.e., to get a speedup of 100, 99% of your work must run perfectly parallel.  To get a speedup of 1,000,000  (the size of modern supercomputers) 99.9999% perfect parallelism is necessary.   Bear this in mind when setting performance goals and expectations.
 
 For these reasons the concepts of strong and weak scaling were introduced.
-* Strong scaling: An application shows good strong scaling if for a fixed problem size it shows a near ideal (linear in *P*) speedup.  This is hard!
-* Weak scaling: ...
+* Strong scaling: An application shows good strong scaling if for a fixed problem size it shows a near ideal (linear in *P*) speedup.  This is hard because of Amhdahl's law.
 
-**to be finished**
-
+* Weak scaling: An application shows good weak scaling if its execution time remains constant as the amount of work is increased proportional to the number of processors.  I.e., on bigger machines you run bigger problems that ideally have more parallelism.  However, while this is perhaps straightforward for many grid-based engineering code for which the amount of work scales linearly with the amount of data, many chemistry and materials applications have non-linear scaling.
 
 ### Load, data balance and hot spots
 
-Further limiting performance is the assumption of perfect parallelism.  It is very hard to distribute work (a.k.a. load balance) across all of the processes.
+Further limiting performance is the assumption of perfect parallelism.  It can be very hard to distribute work (a.k.a. load balance) across all of the processes.  For some applications, work is entirely driven by the data but this is not always the case.
 
-##  Debugging, etc.
+Data distribution can also be a challenge.  The finite memory of each node is one constraint.  Another is that all of the data needed by a task must be brought together for it to be executed.  
+
+##  Debugging and performance analysis
+
+There are some powerful visual parallel debuggers that understand MPI, but since these can be expensive we are often left just with GDB. There are variety of ways of using GDB to debug a parallel application:
+
+* Intel MPI and MPICH provide an easy mechanism --- just add `-gdb` to your `mpirun` command.  At this point you are interacting with `gdb` attached to each of your processes.  By default your commands are sent to all processes and output is annoted process. You can control which process you are interacting with using the `z` command.  Some more info is in section 7 of [here](http://physics.princeton.edu/it/cluster/docs/mpich2-user-guide.pdf).
+
+* Other MPI implementations have other mechanisms.  E.g., see here for [OpenMPI debugging](https://www.open-mpi.org/faq/?category=debugging).
+
+* A more portable solution that assumes the processes can create an X-window on your computer is `mpirun -np 2 xterm -e gdb executable` which creates an `xterm` for each process in your application.  This works great for a few processes, but does not scale and it can be complicated to get X-windows to work thru firewalls, etc.
+
+## 7. Work and data distribution strategies
+
+* counter
+* systolic loop
+* reading about parallel mxm
 
 
 **to be added**
 
-##  Additional concepts and material
+## 8. Additional concepts and material
 
+* Groups
 * Inter communicators
 * Toplogies
 * 
