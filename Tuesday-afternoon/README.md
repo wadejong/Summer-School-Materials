@@ -548,9 +548,10 @@ There are some powerful visual parallel debuggers that understand MPI, but since
 
 ## 8. Additional concepts and MPI features
 
-* Groups
+* Process groups
 * Inter communicators
 * Toplogies
+* Implementation attributes
 * I/O
 * etc.
 
