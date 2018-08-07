@@ -142,10 +142,10 @@ The new version ([`exercises/mpihello.cc`](https://github.com/wadejong/Summer-Sc
 
 ### Compiling MPI programs
 
-Build your parallel version with `make mpihello1` or `mpiicpc -o mpihello1 mpihello1.cc`
+Build your parallel version with `make mpihello` or `mpiicpc -o mpihello mpihello.cc`
 
 * MPI provides wrappers for compiling and linking programs because there's a lot of machine specific stuff that must be done.
-* For the summer school we are using the Intel C++ compiler and MPI library so we use the command `mpiicpc` (`mpiifort` for the Intel FORTRAN, `mpiicc` for Intel C) but more commonly you might be using the GNU stack (`mpicxx`, `mpicc`, `mpifort`, etc.)
+* For the summer school we are using the Intel C++ compiler and MPI library so we use the command `mpiicpc` (`mpiifort` for the Intel FORTRAN, `mpiicc` for Intel C) but more commonly you might be using the GNU stack (`mpicxx`, `mpicc`, `mpifort`, etc.) (see [here](https://software.intel.com/en-us/mpi-developer-reference-linux-compiler-commands) for more details).
 
 ### Running MPI programs
 
@@ -171,7 +171,7 @@ but more likely will look something like
     Hello from process 0 of 4
 ~~~
 
-We used four processes on the local machine (e.g., your laptop or the cluster login node).  More typically, we want to use multiple computers.  You can manually provide to `mpirun` a hostfile that tells it which computers to use --- on most clusters this is rarely necessary since a batch system is used to
+We used four processes on the local machine (e.g., your laptop or the cluster login node).  More typically, and to avoid the ire of colleagues, we want to use multiple computers from the cluster.  You can manually provide to `mpirun` a hostfile that tells it which computers to use --- on most clusters this is rarely necessary since a batch system is used to
 * time share the computers in the cluster
 * queue jobs according to priority, resource needs, etc.
 
@@ -320,7 +320,7 @@ Write a program that has two processes exchanging a buffer of length `N` bytes. 
 
 There are several ways (both correct and incorrect) of writing this program.  You might try the simplest option first --- each process first sends its buffer and then receives its buffer.
 
-Note that this is such a common operation that there is a special `MPI_Sendrecv` operation to make this less error prone, less verbose, and to enable optimizations.
+Note that this is such a common operation that there is a special ([`MPI_Sendrecv`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Sendrecv.html)) operation to make this less error prone, less verbose, and to enable optimizations.
 
 #### Exercise:
 
@@ -342,9 +342,9 @@ A timer is also useful --- [`MPI_Wtime`](https://www.mpich.org/static/docs/v3.2/
 
 ### Non-blocking (asynchronous) communication
 
-* When a non-blocking send function completes, the user must not modify the send buffer until the request is known to have completed (e.g., using ([`MPI_Test`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Test.html)) or [`MPI_Wait`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Wait.html)).
+* When a non-blocking send function ([`MPI_Isend`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Isend.html)) completes, the user must not modify the send buffer until the request is known to have completed (e.g., using ([`MPI_Test`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Test.html)) or [`MPI_Wait`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Wait.html)).
 
-* When a non-blocking recv function completes, any message data is not completely available in the buffer until the request is known to have completed.
+* When a non-blocking recv function ([`MPI_Irecv`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Irecv.html)) completes, any message data is not completely available in the buffer until the request is known to have completed.
 
 ```c++
     int MPI_Isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,  MPI_Comm comm, MPI_Request *request);
@@ -374,8 +374,7 @@ A timer is also useful --- [`MPI_Wtime`](https://www.mpich.org/static/docs/v3.2/
 
 **To be expanded**
 
-Note monte-carlo example
-
+Note pi Monte Carlo example
 
 ## 5. Global or collective operations
 
@@ -434,7 +433,7 @@ There are many pre-defined reduction operation and you can also define your own
 
 ### Exercise:
 
-In `exercises/trapezoid_seq.cc` is a sequential program that uses the trapezoid rule to estimate the value of the integral
+In [`exercises/trapezoid_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/trapezoid_seq.cc) is a sequential program that uses the trapezoid rule to estimate the value of the integral
 
 <img src="https://latex.codecogs.com/svg.latex?\Large&space;\int&#95;{-6}^{6}\exp(-x^2)\cos(3x)\,dx" title="Amdahl" />
 
@@ -444,10 +443,15 @@ Please make it run in parallel using MPI with process responsible for deciding i
 
 We will walk through the solution together since this is an important example.
 
+### Exercise
+
+In [`exercises/pi_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/pi_seq.cc) is a (now traditional) Monte Carlo program to compute the value of pi.  Make it run in parallel and increase the number of points to demonstrate a speedup.
+
 ### Other global operations
 
 There are many other global operations --- barrier, gather, scatter, parallel prefix, etc.
 
+There are also asynchronous variants --- which are interesting because they may permit overlap of multiple global operations, or overlap of work and communication, or reduce the impact of load imbalance.
 
 
 ### Another minimal set of six operations
@@ -544,10 +548,10 @@ There are some powerful visual parallel debuggers that understand MPI, but since
 * master slave model
 * replicated vs. distributed data
 * systolic loop
-* reading about parallel mxm
+* [parallel matrix multiplication](http://www.cs.utexas.edu/~flame/pubs/SUMMA2d3dTOMS.pdf) --- not as easy as you might think
+* etc.
 
-
-## 8. Additional concepts and material
+## 8. Additional concepts and MPI features
 
 * Groups
 * Inter communicators
@@ -555,14 +559,13 @@ There are some powerful visual parallel debuggers that understand MPI, but since
 * I/O
 * etc.
 
-
 ## 9. Exercises
 
-1. Skim through some of the other tutorials and documentation that have links provided above
-2. Write a program to benchmark the performance of reduce, all-reduce, broadcast as a function of both N and P.  Use N=1,2,4,8,...,1024*1024 doubles. And experiment with processes on the same node and on
+1. [easy] Skim through some of the other tutorials and documentation that have links provided above
+2. [easy-medium] Write a program to benchmark the performance of reduce, all-reduce, broadcast as a function of both N and P.  Use N=1,2,4,8,...,1024*1024 doubles. And experiment with processes on the same node and on
 different nodes (this means setting #nodes and #ppn correctly in the PBS file).
-3. Work through the various examples in the `exercises/` directory
-4. [easy] Parallelize Monte Carlo computation of pi starting from `exercises/pi_seq.cc`.
-5. [medium] Parallelize the recursively adaptive quadrature program `exercises/recursive.cc`.
-6. [medium-hard] Write MPI versions of the example SCF, VMC, or MD codes
+4. [easy] Parallelize Monte Carlo computation of pi starting from [`exercises/pi_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/pi_seq.cc)
+4. [easy] Work through the other various examples in the `exercises/` directory
+5. [medium] Parallelize the recursively adaptive quadrature program [`exercises/recursive_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/recursive_seq.cc)
+6. [medium-hard] Write MPI versions of the example SCF, VMC, or MD codes in the main [chemistry examples directory](https://github.com/wadejong/Summer-School-Materials/blob/master/examples).  This tree includes example programs for Hartree Fock, molecular dynamics (already seen in the OpenMP lecture), and variational quantum Monte Carlo.  Sequential, OpenMP, and MPI versions are provided.  There's lots of different approaches so don't take our parallel versions as definitive.
 
