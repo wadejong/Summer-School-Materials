@@ -1,0 +1,14 @@
+#!/bin/bash
+#PBS -l nodes=1:ppn=24,walltime=00:20:00
+#PBS -q molssi -N scfomp -j oe
+
+source /gpfs/projects/molssi/modules-intel
+cd $PBS_O_WORKDIR
+
+for nth in 24 20 16 12 10 8 6 4 2 1 ; do 
+   echo "NUM_THREADS $nth"
+   OMP_NUM_THREADS=$nth ./scf c6h12.xyz
+done
+
+
+

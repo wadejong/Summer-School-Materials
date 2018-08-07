@@ -1,0 +1,12 @@
+#!/bin/bash
+#PBS -l nodes=1:ppn=24,walltime=00:20:00
+#PBS -q molssi -N mdomp -j oe
+
+source /gpfs/projects/molssi/modules-intel
+cd $PBS_O_WORKDIR
+
+
+for p in 1 2 4 6 8 10 12 14 16; do
+   echo "NUM_THREADS $p"
+   OMP_NUM_THREADS=$p ./md
+done
