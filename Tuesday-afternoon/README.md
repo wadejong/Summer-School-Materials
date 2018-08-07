@@ -82,7 +82,7 @@ References:
 ### Writing hello world
 
 Start from sequential version `hello.cc`
-```
+```c++
     #include <iostream>
     int main() {
         std::cout << "Hello" << std::endl;
