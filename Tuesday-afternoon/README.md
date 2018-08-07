@@ -305,7 +305,7 @@ There's data types for everything, and you can define you own including non-cont
 |`MPI_DOUBLE`         |double              |
 |etc.               |                    |
 |`MPI_PACKED`	    |define your own with|
-|                   |`MPI_Pack`/`MPI_Unpack` |
+|                   |[`MPI_Pack`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Pack.html)/[`MPI_Unpack`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Pack.html) |
 
 
 #### Exercise:
@@ -368,13 +368,8 @@ A timer is also useful --- [`MPI_Wtime`](https://www.mpich.org/static/docs/v3.2/
 *  Buffered send --- provide sender-side buffering to ensure a send always completes and to make memory-management more explicit
 *  Synchronous send --- completes on the sender-side when the receive has also completed
 *  Ready send --- if you know a matching receive has already been posted this enables optimizations, and this style of programming is explicitly safe from memory/buffer issues
+*  One-sided operations --- remote memory access (RMA)
 
-
-### One-sided operations
-
-**To be expanded**
-
-Note pi Monte Carlo example
 
 ## 5. Global or collective operations
 
@@ -418,18 +413,18 @@ There are many pre-defined reduction operation and you can also define your own
 
 |**Operation** | Description | Datatype|
 |:-------------|:------------|:--------|
-|MPI_MAX       |maximum      |integer,float|
-|MPI_MIN       |minimum      |integer,float|
-|MPI_SUM       |sum          |integer,float|
-|MPI_PROD      |product      |integer,float|
-|MPI_LAND      |logical AND  |integer|
-|MPI_BAND      |bit-wise AND |integer,MPI_BYTE|
-|MPI_LOR       |logical OR   |integer|
-|MPI_BOR       |bit-wise OR  |integer,MPI_BYTE|
-|MPI_LXOR      |logical XOR  |integer|
-|MPI_BXOR      |bit-wise XOR |integer,MPI_BYTE|
-|MPI_MAXLOC    |max value and location|float|
-|MPI_MINLOC    |min value and location|float|
+|`MPI_MAX`       |maximum      |integer,float|
+|`MPI_MIN`       |minimum      |integer,float|
+|`MPI_SUM`       |sum          |integer,float|
+|`MPI_PROD`      |product      |integer,float|
+|`MPI_LAND`      |logical AND  |integer|
+|`MPI_BAND`      |bit-wise AND |integer,MPI_BYTE|
+|`MPI_LOR`       |logical OR   |integer|
+|`MPI_BOR`       |bit-wise OR  |integer,MPI_BYTE|
+|`MPI_LXOR`      |logical XOR  |integer|
+|`MPI_BXOR`      |bit-wise XOR |integer,MPI_BYTE|
+|`MPI_MAXLOC`    |max value and location|float|
+|`MPI_MINLOC`    |min value and location|float|
 
 ### Exercise:
 
@@ -548,7 +543,7 @@ There are some powerful visual parallel debuggers that understand MPI, but since
 * master slave model
 * replicated vs. distributed data
 * systolic loop
-* [parallel matrix multiplication](http://www.cs.utexas.edu/~flame/pubs/SUMMA2d3dTOMS.pdf) --- not as easy as you might think
+* parallel matrix multiplication ([here](http://www.cs.utexas.edu/~flame/pubs/SUMMA2d3dTOMS.pdf) and [here](https://www3.nd.edu/~zxu2/acms60212-40212/Lec-07-3.pdf)) is not as easy as you might think
 * etc.
 
 ## 8. Additional concepts and MPI features
@@ -564,8 +559,8 @@ There are some powerful visual parallel debuggers that understand MPI, but since
 1. [easy] Skim through some of the other tutorials and documentation that have links provided above
 2. [easy-medium] Write a program to benchmark the performance of reduce, all-reduce, broadcast as a function of both N and P.  Use N=1,2,4,8,...,1024*1024 doubles. And experiment with processes on the same node and on
 different nodes (this means setting #nodes and #ppn correctly in the PBS file).
-4. [easy] Parallelize Monte Carlo computation of pi starting from [`exercises/pi_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/pi_seq.cc)
+4. [easy] Parallelize Monte Carlo computation of pi starting from [`exercises/pi_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/pi_seq.cc) using global operations
 4. [easy] Work through the other various examples in the `exercises/` directory
-5. [medium] Parallelize the recursively adaptive quadrature program [`exercises/recursive_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/recursive_seq.cc)
-6. [medium-hard] Write MPI versions of the example SCF, VMC, or MD codes in the main [chemistry examples directory](https://github.com/wadejong/Summer-School-Materials/blob/master/examples).  This tree includes example programs for Hartree Fock, molecular dynamics (already seen in the OpenMP lecture), and variational quantum Monte Carlo.  Sequential, OpenMP, and MPI versions are provided.  There's lots of different approaches so don't take our parallel versions as definitive.
+5. [medium] Parallelize the recursively adaptive quadrature program [`exercises/recursive_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/recursive_seq.cc)6
+. [medium-hard] Write MPI versions of the example SCF, VMC, or MD codes in the main [chemistry examples directory](https://github.com/wadejong/Summer-School-Materials/blob/master/examples).  This tree includes example programs for Hartree Fock, molecular dynamics (already seen in the OpenMP lecture), and variational quantum Monte Carlo.  Sequential, OpenMP, and MPI versions are provided, and the `README` in each directory gives more details.  There's lots of different approaches so don't take our parallel versions as definitive.  
 

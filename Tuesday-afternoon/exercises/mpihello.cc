@@ -2,7 +2,7 @@
 #include <iostream>
 
 int main(int argc, char** argv) {
-    if (MPI_Init(&argc,&argv) != MPI_SUCCESS) MPI_Abort(MPI_COMM_WORLD, 1);
+    MPI_Init(&argc,&argv);
     
     int nproc, rank;
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);

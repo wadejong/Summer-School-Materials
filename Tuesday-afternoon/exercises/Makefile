@@ -1,7 +1,7 @@
 CXX = mpiicpc
 CXXFLAGS = -g
 
-TARGETS = hello mpihello sendrecv99 ring exchange1 trapezoid_seq trapezoid_par
+TARGETS = hello mpihello sendrecv99 ring ring-time exchange1 exchange2 trapezoid_seq trapezoid_par pi_seq pi_par client-server recursive_seq
 
 all: $(TARGETS)
 
