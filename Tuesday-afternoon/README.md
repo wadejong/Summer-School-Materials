@@ -37,7 +37,7 @@ Moreover, message-passing programs are intrinsically safer and in some sense eas
 
 Finally, even within a shared-memory computer a message-passing program can sometimes run faster than a shared-memory program.  This is because it is expensive (in time and energy) to share data between processors and it is hard to deisgn a shared-memory program that minimizes the amount of data being touched by multiple processors.  In contrast, a message-passing program shares no data, and all memory references are local to that process.  Indeed, a high-performance shared-memory program can sometimes start to resemble a message-passing program.
 
-The Message Passing Interface (MPI) is now the defacto standard for message passing in high-performance computing, with multiple implementations from the community and computer vendors.
+The [Message Passing Interface (MPI)](https://www.mpi-forum.org/docs/) is now the defacto standard for message passing in high-performance computing, with multiple implementations from the community and computer vendors.
 
 The objective of this brief tutorial is to introduce key elements of MPI and its practical use within the molecular sciences.
 
@@ -46,7 +46,7 @@ References:
 
 * [CSP Hoare book](http://www.usingcsp.com/cspbook.pdf)
 
-* [MPI documentation](https://www.mpi-forum.org/docs/) from MPICH team
+* [MPI standard](https://www.mpi-forum.org/docs/)
 
 * [Seawulf HPC FAQ etc.](https://it.stonybrook.edu/services/high-performance-computing)
 
@@ -55,17 +55,21 @@ References:
 
 ## 3. Useful links
 
-* [MPI interface](https://www.mpich.org/static/docs/v3.2/)
+* [MPI interface](https://www.mpich.org/static/docs/v3.2/) --- from the MPICH team
 
 * [MPI tutorial](https://computing.llnl.gov/tutorials/mpi/) from LLNL --- excellent, thorough, with good links
 
-* [MPI lectures](http://wgropp.cs.illinois.edu/courses/cs598-s16) from Gropp at UIUC --- excellent and very detailed
+* [MPI tutorial(http://www.archer.ac.uk/training/course-material/2018/07/mpi-epcc/notes/MPP-notes.pdf) --- 2 days
 
 * [MPI tutorial](https://htor.inf.ethz.ch/teaching/mpi_tutorials/ppopp13/2013-02-24-ppopp-mpi-basic.pdf) --- MPI for dummies
+
+* [MPI lectures](http://wgropp.cs.illinois.edu/courses/cs598-s16) from Gropp at UIUC --- excellent and very detailed
 
 * [Intel MPI](https://software.intel.com/en-us/intel-mpi-library/documentation) documentation
 
 * [Intel C++](https://software.intel.com/en-us/cpp-compiler-18.0-developer-guide-and-reference) compiler documentation
+
+* [MPI books](http://wgropp.cs.illinois.edu/usingmpiweb/) by Gropp good for intro and reference
 
 
 ## 3. Hello world 
@@ -81,7 +85,7 @@ References:
 
 ### Writing hello world
 
-Start from sequential version `hello.cc`
+Start from sequential version [`exercises/hello.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/hello.cc)
 ```c++
     #include <iostream>
     int main() {
@@ -94,32 +98,36 @@ Build the sequential version with `make hello` or `icpc -o hello hello.cc`.
 ### Required elements of all MPI programs
 
 * Include `mpi.h` --- older versions of some MPI implementations required it be the first header
-* Initialize MPI --- usually the first line of your main program will be similar to the following.
+* Initialize MPI --- by calling [`MPI_Init`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Init.html), or [`MPI_Init_thread`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Init_thread.html). Usually the first line of your main program will be similar to the following if you are not handling errors yourself (see just below)
+```c++
+    MPI_Init(&argc,&argv);
 ```
+or this if you are handling errors
+```c++
     if (MPI_Init(&argc,&argv) != MPI_SUCCESS) MPI_Abort(MPI_COMM_WORLD, 1);
 ```
-* Finalize MPI --- usually the penultimate line of your main program will be
-```
+
+* Finalize MPI --- by calling [`MPI_Finalize`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Finalize.html) usually the penultimate line of your main program will be
+```c++
     MPI_Finalize();
 ```
 * Initializing MPI gives us access to the default communicator (`MPI_COMM_WORLD`)
     * An intra communicator encapsulates all information and resources needed for a group of processes to communicate with each other.  For our simple applications we will always being `MPI_COMM_WORLD` but for real applications you should be passing a communicator into all of your routines to enable reuse and interoperability.
-    * We will look at communicators in more detail soon --- for now we just need to get the number of processes and the rank (`0,1,2,...`) of the current process.
+    * We will look at communicators in more detail soon --- for now we just need to get the number of processes (by calling `[MPI_Comm_size`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Comm_size.html)) and the rank (`0,1,2,...`) of the current process (by calling `[MPI_Comm_size`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Comm_rank.html)).
 * Note how MPI wants access to the command line arguments (so we must modify the signature of `main`). You can use `NULL` instead of `argv` and `argc` but passing arguments to MPI is very useful.
 
 ### Error detection and exit
 * MPI functions return `MPI_SUCCESS` on success or an error code (see documentation) on failure depending on how errors are handled.
-* By default errors abort (i.e., the error handler is `MPI_ERRORS_ARE_FATAL`).  If you want MPI to return errors for you to handle, you can call `MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN)`.
+* By default errors abort (i.e., the error handler is `MPI_ERRORS_ARE_FATAL`).  If you want MPI to return errors for you to handle, you can call [`MPI_Errhandler_set`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Errhandler_set.html)`(MPI_COMM_WORLD, MPI_ERRORS_RETURN)`.
 * To abort execution you cannot just `exit` or `return` because there's lots of clean up that needs to be done when running in parallel --- a poorly managed error can easily waste 1000s of hours of computer time.  You must call `MPI_Abort` to exit with an error code.
 
-
-The new version (`mpihello.cc`) looks like this
-```
+The new version ([`exercises/mpihello.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/mpihello.cc)) looks like this
+```c++
     #include <mpi.h>
     #include <iostream>
     
     int main(int argc, char** argv) {
-        if (MPI_Init(&argc,&argv) != MPI_SUCCESS) MPI_Abort(MPI_COMM_WORLD, 1);
+        MPI_Init(&argc,&argv);
         
         int nproc, rank;
         MPI_Comm_size(MPI_COMM_WORLD, &nproc);
@@ -168,7 +176,7 @@ We used four processes on the local machine (e.g., your laptop or the cluster lo
 * queue jobs according to priority, resource needs, etc.
 
 
-Here's an example batch job (`mpihello.pbs`) for SeaWulf annotated so show what is going on:
+Here's an example batch job ([`exercises/mpihello.pbs`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/mpihello.pbs)) for SeaWulf annotated so show what is going on:
 ~~~
     #!/bin/bash
     #PBS -l nodes=2:ppn=24,walltime=00:02:00
@@ -203,7 +211,7 @@ Here's an example batch job (`mpihello.pbs`) for SeaWulf annotated so show what 
 
     # You can run more things below
 ~~~
-But I find the comments distracting, so here is a minimal version.
+But I find the comments distracting, so here ([`exercises/mpihello.pbs`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/mpihello_minimal.pbs)) is a minimal version.
 ~~~
      #!/bin/bash
      #PBS -l nodes=2:ppn=24,walltime=00:02:00
@@ -227,7 +235,6 @@ Useful PBS/Torque commands are
 * `qstat -Q` and `qstat -q` --- to see info about batch queues (for the summer school only `molssi` is available)
 * `qdel <jobid>` --- to cancel a job
 
-
 ##  4. Sending and receiving messages --- point to point communication
 
 ### Essential elements
@@ -236,7 +243,8 @@ Useful PBS/Torque commands are
 3. One minimal set of six operations
 3. Buffering and safe communication
 4. Non-blocking communication
-5. Other communication modes (synchronous send, buffered send)
+5. Implied weak synchronization
+6. Other communication modes (synchronous send, buffered send)
 
 A process is identified by its rank --- an integer `0,1,..,P-1` where `P` is the number of processes in the communicator (`P` is the size of the communicator).
 
@@ -249,11 +257,11 @@ But messages from multiple processes can be interleaved with each other.
 
 ### Blocking communication
 
-* When a blocking send function completes the buffer can immediately be reused without affecting the sent message.  Note that the receiving process may not necessarily have yet received the message.
-* When a blocking recv function completes the received message is fully available in the buffer.
+* When a blocking send function ([`MPI_Send`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Send.html)) completes the buffer can immediately be reused without affecting the sent message.  Note that the receiving process may not necessarily have yet received the message.
+* When a blocking recv function ([`MPI_Send`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Recv.html)) completes the received message is fully available in the buffer.
 
-```
-    int MPI_Send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,  MPI_Comm comm)
+```c++
+    int MPI_Send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,  MPI_Comm comm);
 ```
 * `buf` --- pointer to the start of the buffer being sent
 * `count` --- number of elements to send
@@ -262,8 +270,8 @@ But messages from multiple processes can be interleaved with each other.
 * `tag`  --- message tag
 * `comm` --- the communicator to use
 
-```
-    int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status)
+```c++
+    int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status);
 ```
 * `buf` --- pointer to the start of the buffer to receive the message
 * `count` --- maximum number of elements the buffer can hold
@@ -273,8 +281,8 @@ But messages from multiple processes can be interleaved with each other.
 * `comm` --- the communicator to use
 * `status` --- pointer to the structure in which to store status
 
-The actual source, count and tag of the received message can be accessed from the status.
-```
+The actual source and tag of the received message can be accessed directly from the status.  Call [`MPI_Get_count`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Get_count.html) to get the count.
+```c++
     status.MPI_TAG;
     status.MPI_SOURCE;
     MPI_Get_count( &status, datatype, &count );
@@ -284,27 +292,27 @@ There's data types for everything, and you can define you own including non-cont
 
 |**MPI data type**  |**C data type**     |
 |:------------------|:-------------------|
-|MPI_BYTE           |8 binary digits     |
-|MPI_CHAR           |char                |
-|MPI_UNSIGNED_CHAR  |unsigned char       |
-|MPI_SHORT          |signed short int	 |	 
-|MPI_UNSIGNED_SHORT |unsigned short int	 |	 
-|MPI_INT            |signed int          |
-|MPI_UNSIGNED       |unsigned int	 |	 
-|MPI_LONG           |signed long int	 |	 
-|MPI_UNSIGNED_LONG  |unsigned long int	 |	 
-|MPI_FLOAT          |float               |
-|MPI_DOUBLE         |double              |
+|`MPI_BYTE`           |8 binary digits     |
+|`MPI_CHAR`           |char                |
+|`MPI_UNSIGNED_CHAR`  |unsigned char       |
+|`MPI_SHORT`          |signed short int	 |	 
+|`MPI_UNSIGNED_SHORT` |unsigned short int	 |	 
+|`MPI_INT`            |signed int          |
+|`MPI_UNSIGNED`       |unsigned int	 |	 
+|`MPI_LONG`           |signed long int	 |	 
+|`MPI_UNSIGNED_LONG`  |unsigned long int	 |	 
+|`MPI_FLOAT`          |float               |
+|`MPI_DOUBLE`         |double              |
 |etc.               |                    |
-|MPI_PACKED	    |define your own with|
-|                   |MPI_Pack/MPI_Unpack |
+|`MPI_PACKED`	    |define your own with|
+|                   |`MPI_Pack`/`MPI_Unpack` |
 
 
 #### Exercise:
 
 Write a program to send an integer (`=99`) from process 0 to process 1 and verify the value is correct.  If it is correct, then print "OK" and terminate correctly, otherwise abort.  Run your program.
 
-Hint: start by copying `mpihello.cc`.
+Hint: start by copying `exercises/mpihello.cc`.
 
 #### Exercise:
 
@@ -330,24 +338,24 @@ Write a program to send an integer (`=99`) around a ring of processes (i.e., `0`
     MPI_Recv
 ~~~
 
-A timer is also useful --- `MPI_Wtime()` returns a high precision wall clock (elapsed) time.  Note that clocks on each process are **not** synchronized.
+A timer is also useful --- [`MPI_Wtime`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Wtime.html) returns a high precision wall clock (elapsed) time.  Note that clocks on each process are **not** synchronized.
 
 ### Non-blocking (asynchronous) communication
 
-* When a non-blocking send function completes, the user must not modify the send buffer until the request is known to have completed (e.g., using `MPI_Test` or `MPI_Wait`).
+* When a non-blocking send function completes, the user must not modify the send buffer until the request is known to have completed (e.g., using ([`MPI_Test`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Test.html)) or [`MPI_Wait`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Wait.html)).
 
 * When a non-blocking recv function completes, any message data is not completely available in the buffer until the request is known to have completed.
 
-```
-    int MPI_Isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,  MPI_Comm comm, MPI_Request *request)
-    int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,  int tag, MPI_Comm comm, MPI_Request *request)
+```c++
+    int MPI_Isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,  MPI_Comm comm, MPI_Request *request);
+    int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,  int tag, MPI_Comm comm, MPI_Request *request);
 ```
 * `request` --- a pointer to structure that will hold the information and status for the request
 
-```
-    int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
-    int MPI_Wait(MPI_Request *request, MPI_Status *status)
-    int MPI_Cancel(MPI_Request *request)
+```c++
+    int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status);
+    int MPI_Wait(MPI_Request *request, MPI_Status *status);
+    int MPI_Cancel(MPI_Request *request);
 ```
 * `request` --- a pointer to the request being tested/waited-upon/cancelled
 * `flag` --- a pointer to an int that will be non-zero (true) if the operation has completed
@@ -359,12 +367,12 @@ A timer is also useful --- `MPI_Wtime()` returns a high precision wall clock (el
 
 *  Buffered send --- provide sender-side buffering to ensure a send always completes and to make memory-management more explicit
 *  Synchronous send --- completes on the sender-side when the receive has also completed
-*  Ready send --- if you know a matching receive has already been posted this enables optimizations (and this style of programming is explicitly safe from memory/buffer issues)
+*  Ready send --- if you know a matching receive has already been posted this enables optimizations, and this style of programming is explicitly safe from memory/buffer issues
 
 
 ### One-sided operations
 
-**to be added**
+**To be expanded**
 
 Note monte-carlo example
 
@@ -374,33 +382,35 @@ Note monte-carlo example
 ### Essential elements
 1. Broadcast
 2. Reduction
-3. Barrier
+3. Implied global synchronization
 4. Other global operations
 
 In constrast to point-to-point operations that involve just two processes, global operations move data between **all** processes asscociated with a communicator with an implied **synchronization** between them.  All processes within a communicator are required to invoke the operation --- hence the alternative name "collective" operations.
 
 Many chemistry, materials, and biophysics applications are written using only global operations to
-* share information between all processes by broadcasting, and
+* share/replicate information between all processes by broadcasting, and
 * compute sums over (partial) results computed by each processes.
 
-We introduce broadcast and reduction and then work through an example.
+This approach does not necessarily scale to the very largest supercomputers, but can suffice for many needs.
+
+We introduce broadcast and reduction, and then work through an example.
 
 ### Broadcast
 
-Broadcasts a buffer of data from process rank `root` to all other processes.  Once the operation is complete within a process its buffer contains the same data as that of process `root`.
-```
+([`MPI_Bcast`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Bcast.html)) broadcasts a buffer of data from process rank `root` to all other processes.  Once the operation is complete within a process its buffer contains the same data as that of process `root`.
+```c++
     int MPI_Bcast (void *buffer, int count, MPI_Datatype datatype, int root,  MPI_Comm comm)
 ```
 * `root` --- the process that is broadcasting the data --- this **must** be the same in all processes
 
 ### Reduction
 
-Combines values with a reduction operation from all processes either to just process `root` (`MPI_Reduce`) or distributing the result back to all processes (`MPI_Allreduce`).
+To combines values from all processes with a reduction operation either to just process `root` (([`MPI_Reduce`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Reduce.html))) or distributing the result back to all processes (([`MPI_Allreduce`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Allreduce.html))).
 
-```
-    int MPI_Reduce (const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm)
+```c++
+    int MPI_Reduce (const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm);
 
-    int MPI_Allreduce (const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm )
+    int MPI_Allreduce (const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm );
 ```
 * `sendbuf` --- a pointer to the buffer that contains the local data to be reduced
 * `recvbuf` --- a pointer to the buffer that will hold the result
@@ -434,6 +444,11 @@ Please make it run in parallel using MPI with process responsible for deciding i
 
 We will walk through the solution together since this is an important example.
 
+### Other global operations
+
+There are many other global operations --- barrier, gather, scatter, parallel prefix, etc.
+
+
 
 ### Another minimal set of six operations
 
@@ -450,7 +465,10 @@ Or a total of eight if you include
     MPI_Send
     MPI_Recv
 ~~~
-
+Or 9 if you want a timer
+~~~
+    MPI_Wtime
+~~~
 
 ##  6. Reasoning about performance
 
@@ -460,7 +478,7 @@ Essential concepts to reason about the performance of your message passing appli
 
 * Weak and strong scaling
 
-* Load balance, data balance, hot spots
+* Load balance, data balance, hot spots, synchronizations
 
 * Latency and bandwidth of communication
 
@@ -477,7 +495,7 @@ Speedup is the ratio of sequential to parallel execution time (whereas efficienc
 You can see that (assuming *Tp>>Ts*) the maximum speed up is *Tp/Ts*.  I.e., to get a speedup of 100, 99% of your work must run perfectly parallel.  To get a speedup of 1,000,000  (the size of modern supercomputers) 99.9999% perfect parallelism is necessary.   Bear this in mind when setting performance goals and expectations.
 
 For these reasons the concepts of strong and weak scaling were introduced.
-* Strong scaling: An application shows good strong scaling if for a fixed problem size it shows a near ideal (linear in *P*) speedup.  This is hard because of Amhdahl's law.
+* Strong scaling: An application shows good strong scaling if for a fixed problem size it shows a near ideal (linear in *P*) speedup as you add more processes.  This is hard because of Amhdahl's law, but unfortunately is what we often want to do in molecular science.
 
 * Weak scaling: An application shows good weak scaling if its execution time remains constant as the amount of work is increased proportional to the number of processors.  I.e., on bigger machines you run bigger problems that ideally have more parallelism.  However, while this is perhaps straightforward for many grid-based engineering code for which the amount of work scales linearly with the amount of data, many chemistry and materials applications have non-linear scaling.
 
@@ -528,15 +546,15 @@ There are some powerful visual parallel debuggers that understand MPI, but since
 * systolic loop
 * reading about parallel mxm
 
-**To be expanded**
 
 ## 8. Additional concepts and material
 
 * Groups
 * Inter communicators
 * Toplogies
+* I/O
+* etc.
 
-**To be expanded**
 
 ## 9. Exercises
 
