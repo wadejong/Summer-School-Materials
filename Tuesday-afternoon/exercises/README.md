@@ -34,3 +34,6 @@ Global/collective operations:
 
 Other:
 * `recursive.cc` --- sequential version of adaptive quadrature for parallelization using P2P or global operations
+* `nest_seq.cc` --- nest of loops to be parallelized
+* `nest_par.cc` --- parallel nest
+    * Illustrates use of counter to parallelize complex loop nest
