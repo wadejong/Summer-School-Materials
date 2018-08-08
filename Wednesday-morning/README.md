@@ -123,6 +123,52 @@ Here are the timings I got when running on 24 cores:
 | 12 MPI, 2 OMP |   1.04 |      0.79 |  1.97 |
 | 24 MPI, 1 OMP |   1.04 |      0.75 |  1.91 |
 
+Notably, the force evaluation is somewhat slower with our OpenMP implementation than it is with our MPI implementation.
+To a large extent, this is likely because we are not peforming our reduction operation efficiently.
+In the `forces` function, replace this:
+
+``` cpp
+#pragma omp critical
+      {
+        for (int i=0; i<natom; i++) {
+          f[i].first += f_thread[i].first;
+          f[i].second += f_thread[i].second;
+        }
+        pe += pe_thread;
+        virial += virial_thread;
+      }
+```
+
+with this:
+
+``` cpp
+#pragma omp barrier
+      int nthreads = omp_get_num_threads();
+      int per_thread = natom / nthreads;
+      for (int i=0; i<nthreads; i++) {
+        int istart = ( (i+ithr) % nthreads ) * per_thread;
+        int iend;
+        if ( (i+ithr) % nthreads == nthreads - 1 ) {
+          iend = natom;
+          pe += pe_thread;
+          virial += virial_thread;
+        }
+        else {
+          iend = ( (i+ithr+1) % nthreads ) * per_thread;
+        }
+        for (int j=istart; j<iend; j++) {
+          f[j].first += f_thread[j].first;
+          f[j].second += f_thread[j].second;
+        }
+#pragma omp barrier
+      }
+```
+
+Running with 1 MPI task and 24 OpenMP threads, I get:
+
+>times:  force=1.12s  neigh=0.96s  total=2.27s
+
+This is a clear improvement, but it is still worse than running with MPI.
 
 
 # Memory analysis
@@ -212,4 +258,184 @@ In many cases, it may be necessary to run with less MPI and more OpenMP, simple 
 
 
 # OpenMP, MPI-Style
+
+Now that we have seen how to parallelize this code with MPI, let's try parallelizing with OpenMP again, but using a strategy similar to the MPI one.
+Instead of parallelizing individual sectios with OpenMP, we will have a single OpenMP parallel region:
+
+``` cpp
+#pragma omp parallel
+    {
+      md();
+    }
+```
+
+Also use `#pragma omp master` to ensure that only the master thread prints anything.
+Do the same with the lines where `time_neigh` and `time_force` are incremented.
+
+We want to be certain that each thread is working with the same initial data, so surround the bit of code that generates `coords` and `v` with:
+
+``` cpp
+#pragma omp single copyprivate(coords, v)
+    {
+      double box = std::min(std::sqrt(1.0*natom)*sigma*1.25,L);
+      for (int i=0; i<natom; i++) {
+        ...
+        v[i] = xyT(vx,vy);
+      }
+    }
+```
+
+As with MPI, our basic plan will be to have each thread only compute part of the neighborlist, then reduce `f`, `virial`, and `pe` at the end of the `forces` function.
+Restrict the elements of the neighborlist calculated by each thread:
+
+``` cpp
+void neighbor_list(const coordT& coords, neighT& neigh) {
+    double start = omp_get_wtime();
+    int	ithr = omp_get_thread_num();
+    int	nthreads = omp_get_num_threads();
+    neigh.clear();
+    for (int i=ithr; i<natom; i+=nthreads) {
+```
+
+For the reduction, we will need some shared variables.
+Define these globally:
+
+``` cpp
+coordT f_shared(natom,xyT(0.0,0.0));
+double virial_shared = 0.0;
+double pe_shared = 0.0;
+```
+
+Put the following at the end of the `forces` subroutine, which will reduce the forces across all threads.
+
+``` cpp
+    // Zero the shared forces
+#pragma omp single
+    {
+      pe_shared = 0.0;
+      virial_shared = 0.0;
+      for (int i=0; i<natom; i++) {
+        f_shared[i].first = 0.0;
+        f_shared[i].second = 0.0;
+      }
+    }
+
+    // Reduce the forces
+#pragma omp barrier
+#pragma omp critical
+    {
+      pe_shared += pe;
+      virial_shared += virial;
+      for (int i=0; i<natom; i++) {
+        f_shared[i].first += f[i].first;
+        f_shared[i].second += f[i].second;
+      }
+    }
+
+    // Replace each thread's private forces
+#pragma omp barrier
+    pe = pe_shared;
+    virial = virial_shared;
+    for (int i=0; i<natom; i++) {
+      f[i].first = f_shared[i].first;
+      f[i].second = f_shared[i].second;
+    }
+```
+
+Finally, repeat our optimization of the `neighT` list:
+
+``` cpp
+typedef std::vector<pairT> neighT;
+...
+    neigh.clear();
+    neigh.reserve(100*natom/nthreads);
+```
+
+With these modifications and running on 24 threads, we get fairly decent timngs, but no better than what we had from the previous OpenMP parallelization.
+
+>times:  force=1.77s  neigh=0.81s  total=2.74s
+
+Notably, the force evaluation is somewhat slower with our OpenMP implementation than it is with our MPI implementation.
+Put a timer around the reduction operation in the `forces` function, and print out the result.
+
+>times:  reduction=1.17s  force=1.87s  neigh=0.78s  total=2.77s
+
+The reduction is taking a significant amount of time.
+This is largely are result of the fact that our reduction uses a `critical` region, which forces each thread to wait its turn.
+We can modify the critical section so that all of the threads participate in the reduction simultaneously.
+Replace the following:
+
+``` cpp
+    // Reduce the forces
+#pragma omp barrier
+#pragma omp critical
+    {
+      pe_shared += pe;
+      virial_shared += virial;
+      for (int i=0; i<natom; i++) {
+        f_shared[i].first += f[i].first;
+        f_shared[i].second += f[i].second;
+      }
+    }
+```
+
+with this:
+
+``` cpp
+#pragma omp barrier
+    int ithr = omp_get_thread_num();
+    int nthreads = omp_get_num_threads();
+    int per_thread = natom / nthreads;
+    for (int i=0; i<nthreads; i++) {
+      int istart = ( (i+ithr) % nthreads ) * per_thread;
+      int iend;
+      if ( (i+ithr) % nthreads == nthreads - 1 ) {
+        iend = natom;
+        pe_shared += pe;
+        virial_shared += virial;
+      }
+      else {
+        iend = ( (i+ithr+1) % nthreads ) * per_thread;
+      }
+      for (int j=istart; j<iend; j++) {
+        f_shared[j].first += f[j].first;
+        f_shared[j].second += f[j].second;
+      }
+#pragma omp barrier
+    }
+```
+
+>times:  reduction=0.35s  force=1.06s  neigh=0.78s  total=1.95s
+
+This modification substantially improves the performance of the reduction operation.
+
+Let's run some calculations with a larger system size:
+
+``` cpp
+const int natom = 128000;         // Number of atoms
+const double sigma = 20;        // Particle radius
+const double L = 6400;          // Box size
+```
+
+Rerunning the code with 24 OpenMP threads gives:
+
+>times:  reduction=6.32s  force=27.05s  neigh=181.36s  total=219.88s
+
+and 
+
+>        Maximum resident set size (kbytes): 305512
+
+Now go back to our hybrid MPI-OpenMP code, and run it using the larger system size.
+
+For 1 MPI task and 24 OpenMP threads, I get:
+
+>times:  force=23.79s  neigh=181.77s  total=215.53s
+
+> 	 Maximum resident set size (kbytes): 180828
+
+For 24 MPI tasks and 1 OpenMP thread, I get:
+
+> times:  force=31.23s  neigh=179.71s  total=224.29s
+
+>        Maximum resident set size (kbytes): 28148
 

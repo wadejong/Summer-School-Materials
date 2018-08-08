@@ -6,6 +6,6 @@
 
 source /gpfs/projects/molssi/modules-intel
 cd $PBS_O_WORKDIR
-export OMP_NUM_THREADS=4
+export OMP_NUM_THREADS=24
 
 mpirun -n 1 ./exec_wrapper_mpi.sh ./md > output
