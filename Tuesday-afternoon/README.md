@@ -27,7 +27,7 @@ Motivations:
 
 The only cost-effective path to massive performance is connecting together multiple commodity computers via a high-performance network.  In present technologies each computer will contain multiple CPUs (cores) that share memory. They might also contain GPUs or other accelerators.
 
-![distmem](images/hybrid_mem.gif  "Distributed memory")
+![distmem](images/hybrid_mem.png  "Distributed memory")
 
 We wish to program this cluster of computers to collaborate in the solution of a single science problem.  The challenge is that the processes do not share any memory (the memory and the data it contains is distributed across the cluster), and potentially not even a file system.  This is a classic problem in concurrent systems, and the communicating sequential processes (CSP; see references below) model provides a rigorous solution with provable properties.  Sometimes performance is not our only concern --- for instance, you might have a problems with a massive amount of data that could be enabled by the aggregate memory of a cluster.
 
@@ -426,6 +426,12 @@ There are many pre-defined reduction operation and you can also define your own
 |`MPI_MAXLOC`    |max value and location|float|
 |`MPI_MINLOC`    |min value and location|float|
 
+### Exercise
+
+In [`exercises/pi_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/pi_seq.cc) is a (now traditional) Monte Carlo program to compute the value of pi.  Make it run in parallel using broadcast and reduce.  Increase the number of points to demonstrate a speedup.
+
+We will walk through the solution together since this is an important example.
+
 ### Exercise:
 
 In [`exercises/trapezoid_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/trapezoid_seq.cc) is a sequential program that uses the trapezoid rule to estimate the value of the integral
@@ -434,13 +440,9 @@ In [`exercises/trapezoid_seq.cc`](https://github.com/wadejong/Summer-School-Mate
 
 It repeatedly increases the number of points by a factor two until the error is satisfactory.
 
-Please make it run in parallel using MPI with process 0 responsible for deciding if the error is satisfactory (and of course telling everyone else).
+Please make it run in parallel using MPI.  Initially just make the integration step run in parallel using all-reduce. Then, make only process 0 responsible for deciding if the error is satisfactory (and of course telling everyone else).
 
 We will walk through the solution together since this is an important example.
-
-### Exercise
-
-In [`exercises/pi_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/pi_seq.cc) is a (now traditional) Monte Carlo program to compute the value of pi.  Make it run in parallel and increase the number of points to demonstrate a speedup.
 
 ### Other global operations
 
@@ -538,8 +540,8 @@ There are some powerful visual parallel debuggers that understand MPI, but since
 
 ## 7. Work and data distribution strategies
 
-* partitioning the iterations of an outer loop
-* using a counter to distribute the iterations of a nest of loops
+* partitioning the iterations of an outer loop (see [`exercises/trapezoid_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/trapezoid_seq.cc) and parallel version)
+* using a counter to distribute the iterations of a nest of loops (see [`exercises/nest_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/nest_seq.cc) and parallel veersion)
 * master slave model
 * replicated vs. distributed data
 * systolic loop
