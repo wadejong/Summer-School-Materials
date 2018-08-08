@@ -27,7 +27,7 @@ Motivations:
 
 The only cost-effective path to massive performance is connecting together multiple commodity computers via a high-performance network.  In present technologies each computer will contain multiple CPUs (cores) that share memory. They might also contain GPUs or other accelerators.
 
-![distmem](images/hybrid_mem.png  "Distributed memory")
+![distmem](images/hybrid_mem.gif  "Distributed memory")
 
 We wish to program this cluster of computers to collaborate in the solution of a single science problem.  The challenge is that the processes do not share any memory (the memory and the data it contains is distributed across the cluster), and potentially not even a file system.  This is a classic problem in concurrent systems, and the communicating sequential processes (CSP; see references below) model provides a rigorous solution with provable properties.  Sometimes performance is not our only concern --- for instance, you might have a problems with a massive amount of data that could be enabled by the aggregate memory of a cluster.
 
