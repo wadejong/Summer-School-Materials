@@ -25,7 +25,7 @@ Motivations:
 
 * Correctness
 
-The only cost-effective path to massive performance is connecting together multiple commodity computers via a high-performance network.  In present technologies each computer will contain multiple CPUs (cores) that share memory. They might also contain GPUs or other accelerators.
+The only cost-effective path to massive performance is connecting together multiple commodity computers via a high-performance network.  As we add more computers, we add more compute power, more memory, more memory bandwidth, more disk space, etc. In present technologies each computer will contain multiple CPUs (cores) that share memory. They might also contain GPUs or other accelerators.
 
 ![distmem](images/hybrid_mem.gif  "Distributed memory")
 
@@ -524,7 +524,9 @@ Inserting *L*=1us and *B*=10Gbyte/s, we obtain *N1/2*=10000bytes.
 
 Excercise: Derive a similar a similar formula for the length necessary to acheive 90% peak bandwith.
 
-Bisection bandwidth is another important concept especially if you are doing a lot of communication all at once.  Divide your parallel machine in two halves so as to give the worst possible bandwidth connecting the halves.  This is the bisection bandwidth, which you can derive by counting the number of wires that you cut.  If your communication pattern is not local but is uniform and does not have any hot spots (think uniform and random), your effective bandwidth is the bisection bandwidth divided by the number of processes.  This can be much smaller than the bandwidth obtained by a single message on a quiet machine.  Thus, the communication intensity of your application is important.  Spreading communication over a larger period of time is a possible optimization.
+Bisection bandwidth is another important concept especially if you are doing a lot of communication all at once.  The network connecting the computers (nodes) in your cluster probably does not directly connect all nodes with every other node --- for anything except a small cluster this would involve too many wires (*O(P^2)* wires, *P*=number of nodes).  Instead, networks use simpler topologies with just *O(P)* wires --- e.g., mesh, n-dimension torous, tree, fat tree, etc.  Imagine dividing this network in two halves so as to give the worst possible bandwidth connecting the halves, which you can derive by counting the number of wires that you cut. This is the bisection bandwidth.  If your application is doing a lot of communication that is not local but is uniform and random, your effective bandwidth is the bisection bandwidth divided by the number of processes.  This can be much smaller than the bandwidth obtained by a single message on a quiet machine.  For instance, in a square mesh of P processes, the bisection bandwidth is *O(sqrt(P))* and if all proceses are trying to communicate globally the average available bandwidth is *O(1/sqrt(P))*, which is clearly not scalable.
+
+Thus, the communication intensity and the communication pattern of your application are both important.  Spreading communication over a larger period of time is a possible optimization.  Another is trying to communicate only to processes that are close in the sense of distance (wires traversed) on the actual network.
 
 For global communication, the details are more complicated because a broadcast or reduction is executed on an MPI-implementation-specific tree of processes that is mapped to the underlying network topology.  However, for long messages an optimized implementation should be able to deliver similar bandwidth to that of the point-to-point communication, with a latency that grows roughly logarithmically with the number of MPI processes.
 
