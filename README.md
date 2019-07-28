@@ -7,7 +7,7 @@ Clone this repo using:
     git clone https://github.com/wadejong/Summer-School-Materials.git
 ~~~
 
-For the MPI tutorial, when start a new bash shell do the following:
+On Seawulf, please insert in your .bashrc:
 ~~~
-    source /gpfs/projects/molssi/modules-intel
+    source /gpfs/projects/molssi/modules-gnu
 ~~~
