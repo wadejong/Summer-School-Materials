@@ -16,11 +16,11 @@ struct GpuMirroredInt {
                     //   implication is that creating lots of pinned memory
                     //   may make it harder for the host OS to manage large
                     //   memory jobs.
-  int* HostData;    //   Pointer to allocated memory on the host
-  int* DevcData;    //   Pointer to allocated memory on the GPU.  Note that the
-                    //     host can know what the address of memory on the GPU
-                    //     is, but it cannot simply de-reference that pointer
-                    //     in host code.
+  int* HostData;    // Pointer to allocated memory on the host
+  int* DevcData;    // Pointer to allocated memory on the GPU.  Note that the
+                    //   host can know what the address of memory on the GPU
+                    //   is, but it cannot simply de-reference that pointer
+                    //   in host code.
 };
 typedef struct GpuMirroredInt gpuInt;
 
