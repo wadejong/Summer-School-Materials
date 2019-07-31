@@ -278,7 +278,7 @@ int main()
     particleXcoord.HostData[i] = 200.0 * (double)rand() / (double)RAND_MAX;
     particleYcoord.HostData[i] = 200.0 * (double)rand() / (double)RAND_MAX;
     particleZcoord.HostData[i] = 200.0 * (double)rand() / (double)RAND_MAX;
-    particleCharge.HostData[i] = 0.5 - rand() / (double)RAND_MAX;
+    particleCharge.HostData[i] =   0.5 - (double)rand() / (double)RAND_MAX;
   }
 
   // Show the CPU result

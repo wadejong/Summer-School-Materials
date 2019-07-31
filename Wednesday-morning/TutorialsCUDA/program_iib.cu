@@ -77,6 +77,8 @@ __global__ void ParticleSimulator()
   // Show that the device understands the number of particles
   if (threadIdx.x == 0) {
     printf("There are %d particles active.\n", cSh.nparticle);
+    printf("Particle 5 is at %9.4f %9.4f %9.4f\n", cSh.partX[5], cSh.partY[5],
+	   cSh.partZ[5]);
   }
 }
 
@@ -248,18 +250,24 @@ int main()
     particleTypes.HostData[i] = (int)(8 * rand());
 
     // Create some random coordinates
-    particleXcoord.HostData[i] = 20.0 * rand();
-    particleYcoord.HostData[i] = 20.0 * rand();
-    particleZcoord.HostData[i] = 20.0 * rand();
-    particleCharge.HostData[i] = 0.5 - rand();
+    particleXcoord.HostData[i] = 20.0 * (double)rand() / (double)RAND_MAX;
+    particleYcoord.HostData[i] = 20.0 * (double)rand() / (double)RAND_MAX;
+    particleZcoord.HostData[i] = 20.0 * (double)rand() / (double)RAND_MAX;
+    particleCharge.HostData[i] =  0.5 - (double)rand() / (double)RAND_MAX;
   }
 
+  // Indicate the location of a particle for checking purposes.
+  printf("The CPU has placed all %d particles.\nParticle 5 is at %9.4f "
+	 "%9.4f %9.4f\n", np, particleXcoord.HostData[5],
+	 particleYcoord.HostData[5],  particleZcoord.HostData[5]);
+  printf("Launch the GPU kernel with no kernel arguments...\n");
+  
   // Stage critical constants--see cribSheet struct instance cSh above.
   cribSheet cnstage;
   cnstage.nparticle = np;
   cnstage.partX = particleXcoord.DevcData;
-  cnstage.partY = particleXcoord.DevcData;
-  cnstage.partZ = particleXcoord.DevcData;
+  cnstage.partY = particleYcoord.DevcData;
+  cnstage.partZ = particleZcoord.DevcData;
   cnstage.partQ = particleCharge.DevcData;
 
   // Upload all data to the device
