@@ -89,7 +89,7 @@ __global__ void ParticleSimulator()
       float dy = cSh.partY[tidx] - cSh.partY[i];
       float dz = cSh.partZ[tidx] - cSh.partZ[i];
       float r = sqrt(dx*dx + dy*dy + dz*dz);
-      qq += cSh.partQ[tidx] * cSh.partQ[i] * erf(r) / r;
+      qq += cSh.partQ[tidx] * cSh.partQ[i] / r;
     }
 
     // Increment counter

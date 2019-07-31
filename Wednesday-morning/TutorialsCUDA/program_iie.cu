@@ -433,7 +433,7 @@ int main()
   
   // We have allocated for a maximum of 100 particles,
   // but let's say there are only 47 in this case.
-  np = 98192;
+  np = 97913;
   for (i = 0; i < np; i++) {
 
     // Integer truncation would happen anyway, I'm just making it explicit
