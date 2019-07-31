@@ -79,27 +79,11 @@ typedef struct GpuMirroredFloat gpuFloat;
 __global__ void ParticleSimulator()
 {
   int i;
-
-  // Each thread must have __shared__ memory, visible by other threads,
-  // to store information about one particle it has been assigned to read
-  // and manage.  Each array has as many elements as there are threads in
-  // the block.  If the launch parameters were to change, all of these
-  // array sizes should change as well.
-  __shared__ volatile float   pX[512],   pY[512],   pZ[512], pQ[512];
-  __shared__ volatile float   tX[512],   tY[512],   tZ[512], tQ[512];
-  __shared__ volatile float sfpX[512], sfpY[512], sfpZ[512];
-  __shared__ volatile float sftX[512], sftY[512], sftZ[512];
   
-  // Treat warps as the irreducible units, not threads.  A warp is a group
-  // of 32 threads.  Threads 0-31 are, by convention, warp 0.  Threads
-  // 32-63 are warp 1, and so on.  The thread's warp and lane within the
-  // warp become relevant to its task.  Every thread will store these two
-  // pieces of information in its registers for the duration of the kernel.
   int warpIdx = threadIdx.x / 32;
   int tgx = (threadIdx.x & 31);
 
-  // Initialize forces within the same kernel.  Because this kernel
-  // runs in only one block,
+  // Initialize forces--still keeping this to just one block!
   i = threadIdx.x;
   while (i < cSh.nparticle) {
     cSh.partFrcX[i] = (float)0.0;
@@ -115,41 +99,34 @@ __global__ void ParticleSimulator()
   int bpos = nstripes - warpIdx - 1;
   while (bpos >= 0) {
 
-    // Read 32 particles into memory, accumulate the forces on them,
-    // then write the results back to the device.  If the thread
-    // would read a particle beyond the system's size, then set its
-    // position as dummy numbers which will not do terrible things
-    // if they get into calculations with real particles.
-    //
-    // NOTE HERE and BELOW: threadIdx.x = 32*warpIdx + tgx
-    //
-    // See note above... each thread is operating within a stripe of
-    // the problem.  Accessing index threadIdx.x is integral to that.
+    // Read 32 particles into registers rather than __shared__ memory.
     int prtclIdx = 32*bpos + tgx;
+    float pX, pY, pZ, pQ;
     if (prtclIdx < cSh.nparticle) {
-      pX[threadIdx.x] = cSh.partX[prtclIdx];
-      pY[threadIdx.x] = cSh.partY[prtclIdx];
-      pZ[threadIdx.x] = cSh.partZ[prtclIdx];
-      pQ[threadIdx.x] = cSh.partQ[prtclIdx];
+      pX = cSh.partX[prtclIdx];
+      pY = cSh.partY[prtclIdx];
+      pZ = cSh.partZ[prtclIdx];
+      pQ = cSh.partQ[prtclIdx];
     }
     else {
-      pX[threadIdx.x] = (float)10000.0 + (float)(prtclIdx);
-      pY[threadIdx.x] = (float)10000.0 + (float)(prtclIdx);
-      pZ[threadIdx.x] = (float)10000.0 + (float)(prtclIdx);
-      pQ[threadIdx.x] = (float)0.0;
+      pX = (float)10000.0 + (float)(prtclIdx);
+      pY = (float)10000.0 + (float)(prtclIdx);
+      pZ = (float)10000.0 + (float)(prtclIdx);
+      pQ = (float)0.0;
     }
     
-    // Loop over all particle pairs in the lower half triangle as before
+   // Loop over all particle pairs in the lower half triangle as before
     int tpos = 0;
     while (tpos <= bpos) {
 
       // Initialize particles as in the outer loop
       int prtclIdx = 32*tpos + tgx;
+      float tX, tY, tZ, tQ;
       if (prtclIdx < cSh.nparticle) {
-        tX[threadIdx.x] = cSh.partX[prtclIdx];
-        tY[threadIdx.x] = cSh.partY[prtclIdx];
-        tZ[threadIdx.x] = cSh.partZ[prtclIdx];
-        tQ[threadIdx.x] = cSh.partQ[prtclIdx];
+        tX = cSh.partX[prtclIdx];
+        tY = cSh.partY[prtclIdx];
+        tZ = cSh.partZ[prtclIdx];
+        tQ = cSh.partQ[prtclIdx];
       }
       else {
 
@@ -157,59 +134,61 @@ __global__ void ParticleSimulator()
         // (parallel, but distinct) line so that not even dummy particles
         // can ever occupy the same positions and cause a divide-by-zero.
         // As before, the charge of the dummy particles is zero.
-        tX[threadIdx.x] = (float)10100.0 + (float)(prtclIdx);
-        tY[threadIdx.x] = (float)10200.0 + (float)(prtclIdx);
-        tZ[threadIdx.x] = (float)10300.0 + (float)(prtclIdx);
-        tQ[threadIdx.x] = (float)0.0;
+        tX = (float)10100.0 + (float)(prtclIdx);
+        tY = (float)10200.0 + (float)(prtclIdx);
+        tZ = (float)10300.0 + (float)(prtclIdx);
+        tQ = (float)0.0;
       }
 
       // Initialize tile force accumulators
-      sfpX[threadIdx.x] = (float)0.0;
-      sfpY[threadIdx.x] = (float)0.0;
-      sfpZ[threadIdx.x] = (float)0.0;
-      sftX[threadIdx.x] = (float)0.0;
-      sftY[threadIdx.x] = (float)0.0;
-      sftZ[threadIdx.x] = (float)0.0;
+      float sfpX = (float)0.0;
+      float sfpY = (float)0.0;
+      float sfpZ = (float)0.0;
+      float sftX = (float)0.0;
+      float sftY = (float)0.0;
+      float sftZ = (float)0.0;
 
-      // The tile is now ready.  Compute 32 x 32 interactions.
-      // Tiles lying on the diagonal of the interaction matrix
-      // will do full work for half the results.
+      // Indexing gets a bit more complex.  Again, if we are on a
+      // diagonal tile skip the first iteration of the loop, as
+      // boths sets of 32 particles are the same.
       int imin = (bpos == tpos);
       float anti2xCountingFactor = (bpos == tpos) ? (float)0.5 : (float)1.0;
       for (i = imin; i < 32; i++) {
-        int j = tgx + i;
 
-	// Wrap j back so that it stays within the range [0, 32)
+	// Find the thread to query
+        int j = tgx + i;
         j -= (j >= 32) * 32;
 
-        // The value in position threadIdx.x of each __shared__
-        // memory array will now be compared to one of 32 other
-        // values from the array, in the range:
-        // [ (threadIdx.x / 32) * 32 :: ((threadIdx.x + 31) / 32) * 32 )
-        float dx    = tX[warpIdx*32 + j] - pX[threadIdx.x];
-        float dy    = tY[warpIdx*32 + j] - pY[threadIdx.x];
-        float dz    = tZ[warpIdx*32 + j] - pZ[threadIdx.x];
+	// Compute the interaction
+        float dx    = __shfl_sync(0xffffffff, tX, j) - pX;
+        float dy    = __shfl_sync(0xffffffff, tY, j) - pY;
+        float dz    = __shfl_sync(0xffffffff, tZ, j) - pZ;
         float r2    = dx*dx + dy*dy + dz*dz;
         float r     = sqrt(r2);
         float qfac  = anti2xCountingFactor *
-                      tQ[warpIdx*32 + j] * pQ[threadIdx.x];
+                      __shfl_sync(0xffffffff, tQ, j) * pQ;
         qq         += qfac / sqrt(r2);
-        
-        // This works because threadIdx.x is the only thread that will
-        // ever contribute to sfpX, and the tile is arranged so that,
-        // for a synchronized warp, only one thread will have a
-        // contribution to make to each element of sftX.
+
+	// Log the interaction on this thread
 	float fmag = qfac / (r2 * r);
-        sfpX[threadIdx.x   ] += dx * fmag;
-        sftX[warpIdx*32 + j] -= dx * fmag;
-        sfpY[threadIdx.x   ] += dy * fmag;
-        sftY[warpIdx*32 + j] -= dy * fmag;
-        sfpZ[threadIdx.x   ] += dz * fmag;
-        sftZ[warpIdx*32 + j] -= dz * fmag;
-        __syncwarp();
+	float fx = dx * fmag;
+	float fy = dy * fmag;
+	float fz = dz * fmag;
+	sfpX += fx;
+	sfpY += fy;
+	sfpZ += fz;
+
+	// Find the other thread that queried this one.
+	// __shfl_sync contains a warp synchronization
+	// instruction, so no __syncwarp() is needed.
+	int k = tgx - i;
+	k += (k < 0) * 32;
+	sftX -= __shfl_sync(0xffffffff, fx, k);
+	sftY -= __shfl_sync(0xffffffff, fy, k);
+	sftZ -= __shfl_sync(0xffffffff, fz, k);
       }
 
-      // Contribute the tile force accumulations atomically to global memory
+       // Contribute the tile force accumulations atomically to global memory
       // (DRAM).  This is only about 2x slower than atomic accumulation to
       // __shared__.  Accumulating things like this atomically to __shared__
       // would make the kernel run only about 30% slower than accumulating
@@ -218,12 +197,12 @@ __global__ void ParticleSimulator()
       //
       // Note, the correspondence between 32*bpos + tgx or 32*tpos + tgx
       // and 32*warpIdx + tgx.  32*warpIdx + tgx is, again, threadIdx.x.
-      atomicAdd(&cSh.partFrcX[32*bpos + tgx], sfpX[threadIdx.x]);
-      atomicAdd(&cSh.partFrcY[32*bpos + tgx], sfpY[threadIdx.x]);
-      atomicAdd(&cSh.partFrcZ[32*bpos + tgx], sfpZ[threadIdx.x]);
-      atomicAdd(&cSh.partFrcX[32*tpos + tgx], sftX[threadIdx.x]);
-      atomicAdd(&cSh.partFrcY[32*tpos + tgx], sftY[threadIdx.x]);
-      atomicAdd(&cSh.partFrcZ[32*tpos + tgx], sftZ[threadIdx.x]);
+      atomicAdd(&cSh.partFrcX[32*bpos + tgx], sfpX);
+      atomicAdd(&cSh.partFrcY[32*bpos + tgx], sfpY);
+      atomicAdd(&cSh.partFrcZ[32*bpos + tgx], sfpZ);
+      atomicAdd(&cSh.partFrcX[32*tpos + tgx], sftX);
+      atomicAdd(&cSh.partFrcY[32*tpos + tgx], sftY);
+      atomicAdd(&cSh.partFrcZ[32*tpos + tgx], sftZ);
 
       // Increment the tile counter
       tpos++;
@@ -232,23 +211,16 @@ __global__ void ParticleSimulator()
     // Increment stripe counter
     bpos -= blockDim.x / 32;
   }
-
-  // Need to synchronize warps here as the next instructions will burn sfpX
-  __syncwarp();
   
-  // Reduce the energy contributions using __shared__.  This cannibalizes
-  // the sfpX force accumulator, which is no longer needed.  Then make a
-  // final contribution to the global array from only one thread per warp.
-  // This is another global memory traffic jam mitigation.
-  sfpX[threadIdx.x] = qq;
-  for (i = 16; i >= 1; i /= 2) {
-    if (tgx < i) {
-      sfpX[threadIdx.x] += sfpX[threadIdx.x + i];
-    }
-    __syncwarp();
-  }
+  // Reduce the energy contributions in each warp.
+  // Add the warp contribution to the global sum.
+  qq += __shfl_down_sync(0xffffffff, qq, 16);
+  qq += __shfl_down_sync(0xffffffff, qq,  8);
+  qq += __shfl_down_sync(0xffffffff, qq,  4);
+  qq += __shfl_down_sync(0xffffffff, qq,  2);
+  qq += __shfl_down_sync(0xffffffff, qq,  1);
   if (tgx == 0) {
-    atomicAdd(&cSh.Etot[0], sfpX[threadIdx.x]);
+    atomicAdd(&cSh.Etot[0], qq);
   }
 }
 
