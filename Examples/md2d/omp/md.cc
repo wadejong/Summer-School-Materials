@@ -23,7 +23,7 @@ const double r2cut_neigh = 35;
 const double r2cut_force = 30;
 const double excess_vel = 1.6;
 
-const int MAX_THREADS = 64;
+const int MAX_THREADS = 144;
 
 double time_force, time_neigh, time_total;
 
