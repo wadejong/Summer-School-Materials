@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstdlib>
 #include <cmath>
 #include <cstdio>
 #include <list>
@@ -45,7 +46,7 @@ void neighbor_list(const coordT& coords, thrneighT& thrneigh) {
     {
 	const int nthread = omp_get_num_threads();
 	const int tid = omp_get_thread_num();
-	if (nthread > MAX_THREADS) throw "too many threads"; // not really cool
+	if (nthread > MAX_THREADS) std::abort(); // since throw inside parallel is non-conforming
 
 	neighT& neigh = thrneigh[tid];
 	neigh.clear();
@@ -125,8 +126,8 @@ coordT forces(const thrneighT& thrneigh, const coordT& coords, double& total_vir
 	    double dx = (xi-xj);
 	    double dy = (yi-yj);
 
-	    if (dx == 0.0) throw "fjdlksjflk";
-	    if (dy == 0.0) throw "fjdlksjflk";
+	    if (dx == 0.0) std::abort();
+	    if (dy == 0.0) std::abort();
 
 	    if (dx > (L/2)) dx = dx - L;
 	    else if (dx < (-L/2)) dx = dx + L;

@@ -74,13 +74,13 @@ int main() {
     double* R = new double[Npoint*6]; // Holds N independent samples
     double* PSI = new double[Npoint]; // Holds wave function values
 
-#pragma omp parallel for default(none) shared(Npoint, u, R, PSI) schedule(static)
+#pragma omp parallel for default(none) shared(u, R, PSI) schedule(static)
     for (int i=0; i<Npoint; i++) {
 	initialize(u[i], R+i*6, PSI[i]);
     }
     
     for (int step=0; step<Neq; step++) { // Equilibrate
-#pragma omp parallel for default(none) shared(Npoint, u, R, PSI) reduction(+:naccept) reduction(+:nreject)  schedule(static)
+#pragma omp parallel for default(none) shared(u, R, PSI) reduction(+:naccept) reduction(+:nreject)  schedule(static)
         for (int i=0; i<Npoint; i++) {
 	    propagate(u[i], naccept, nreject, R + i*6, PSI[i]);
         }
@@ -99,7 +99,7 @@ int main() {
         double r1_block = 0.0, r2_block = 0.0, r12_block = 0.0;
 
         for (int step=0; step<Ngen_per_block; step++) {
-#pragma omp parallel for default(none) shared(Npoint, u, R, PSI) reduction(+:naccept) reduction(+:nreject) reduction(+:r1_block) reduction(+:r2_block) reduction(+:r12_block)  schedule(static)
+#pragma omp parallel for default(none) shared(u, R, PSI) reduction(+:naccept) reduction(+:nreject) reduction(+:r1_block) reduction(+:r2_block) reduction(+:r12_block)  schedule(static)
             for (int i=0; i<Npoint; i++) {
     	        propagate(u[i], naccept, nreject, R + i*6, PSI[i]);
                 accumulate_stats(R + i*6, r1_block, r2_block, r12_block);
