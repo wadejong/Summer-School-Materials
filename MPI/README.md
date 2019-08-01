@@ -233,6 +233,7 @@ Useful PBS/Torque commands are
 * `qstat -f <jobid>` --- to see detailed info about a job
 * `qstat -Q` and `qstat -q` --- to see info about batch queues (for the summer school only `molssi` is available)
 * `qdel <jobid>` --- to cancel a job
+
 and for SLURM
 * `squeue` --- see all queued/running jobs
 * `squeue -u <username>` --- to see just your jobs
