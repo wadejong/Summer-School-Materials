@@ -52,6 +52,10 @@ References:
 
 * [Seawulf getting started guide](https://it.stonybrook.edu/help/kb/getting-started-guide)
 
+* [Seawulf SLURM FAQ](https://it.stonybrook.edu/help/kb/using-the-slurm-workload-manager)
+
+* [SLURM reference](https://slurm.schedmd.com/documentation.html)
+
 
 ## 3. Useful links
 
@@ -68,6 +72,8 @@ References:
 * [Intel MPI](https://software.intel.com/en-us/intel-mpi-library/documentation) documentation
 
 * [Intel C++](https://software.intel.com/en-us/cpp-compiler-18.0-developer-guide-and-reference) compiler documentation
+
+* [GNU C/C++](https://gcc.gnu.org/onlinedocs/gcc-9.1.0/gcc) compiler documentation
 
 * [MPI books](http://wgropp.cs.illinois.edu/usingmpiweb/) by Gropp good for intro and reference
 
