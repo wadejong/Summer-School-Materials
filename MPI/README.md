@@ -182,54 +182,47 @@ We used four processes on the local machine (e.g., your laptop or the cluster lo
 * queue jobs according to priority, resource needs, etc.
 
 
-Here's an example batch job ([`exercises/mpihello.pbs`](https://github.com/wadejong/Summer-School-Materials/blob/master/MPI/exercises/mpihello.pbs)) for SeaWulf annotated so show what is going on:
-~~~
-    #!/bin/bash
-    #PBS -l nodes=2:ppn=24,walltime=00:02:00
-    #PBS -q molssi
-    #PBS -N hello
-    #PBS -j oe
-
-    # Above says:
-    # - job has 2 (dedicated) nodes with 24 processes per node with a 2 minute max runtime
-    # - use the molssi queue
-    # - name the job "hello"
-    # - merge the standard output and error into one file
-
-    # Output should appear in the file "<jobname>.o<jobnumber>" in the
-    # directory from which you submitted the job
-
-    # ================================================
-    # If this is not in your .bashrc it needs to be here so that your job
-    # uses the same compilers/libraries that you compiled with
-    source /gpfs/projects/molssi/modules-intel
-
-    # This will change to the directory from which you submitted the job
-    # which we assume below is the one holding the executable
-    cd $PBS_O_WORKDIR
-
-    # Uncomment this if you want to see other PBS environment variables
-    # env | grep PBS
-
-    # Finally, run the executable using $PBS_NUM_NODES*$PBS_NUM_PPN
-    # processes spread across all the nodes
-    mpirun ./mpihello
-
-    # You can run more things below
-~~~
-But I find the comments distracting, so here ([`exercises/mpihello.pbs`](https://github.com/wadejong/Summer-School-Materials/blob/master/MPI/exercises/mpihello_minimal.pbs)) is a minimal version.
+Here's an example batch job ([`exercises/mpihello.sbatch`](https://github.com/wadejong/Summer-School-Materials/blob/master/MPI/exercises/mpihello.sbatch)) for SeaWulf annotated so show what is going on (this is for SLURM ---  look at the `*.pbs` version for PBS/Torque):
 ~~~
      #!/bin/bash
-     #PBS -l nodes=2:ppn=24,walltime=00:02:00
-     #PBS -q molssi -N hello -j oe
+     #SBATCH --nodes=2 --tasks-per-node=40 --cpus-per-task=1 --time=00:05:00 --job-name=test -p debug-40core
 
-     source /gpfs/projects/molssi/modules-intel
-     cd $PBS_O_WORKDIR
+     # Above says:
+     # - job has 2 (dedicated) nodes with 40 processes per node and one cpu/thread per process with a 5 minute max runtime
+     # - use the debug-40core queue
+     # - name the job "test"
+     # - (slurm by default merges the standard output and error into one file)
+
+     # Output should appear in the file "slurm-<jobnumber>.out" in the
+     # directory from which you submitted the job
+
+     # ================================================
+     # Slurm by default 
+     # * copies your environment variables from when you submitted the job, so if your
+     #   modules were correct at time then you don't need to load them here.  If not
+     #   you should execute the following command
+     #   source /gpfs/projects/molssi/modules-gnu
+     # * starts the job running in the same directory that you submitted it from.
+
+     # Uncomment this if you want to see other SLURM environment variables
+     #env | grep SLURM
+
+     # Finally, run the executable using #tasks_per_node on each of #nodes
+     mpirun ./mpihello
+
+     # You can run more things below or use different numbers of processes
+     #mpirun -np 4 ./mpihello
+~~~
+But I find the comments distracting, so here ([`exercises/mpihello.sbatch`](https://github.com/wadejong/Summer-School-Materials/blob/master/MPI/exercises/mpihello_minimal.sbatch)) is a minimal version.
+~~~
+     #!/bin/bash
+     #SBATCH --nodes=2 --ntasks-pepr-node=40 --cpus-per-task=1 --time=00:05:00 --job-name=test -p debug-40core
+
      mpirun ./mpihello
 ~~~
-You can copy and edit the file for your other jobs.  Note that other other systems running PBS will differ.
+You can copy and edit the file for your other jobs.  Note that other other systems running PBS and other schedulers will differ.
 
-Submit the job from the directory holding your executable (or modify the batch script to use the full path to your executable)
+Submit the job from the directory holding your executable (or modify the batch script accordingly)
 ~~~
     qsub mpihello.pbs
 ~~~
@@ -237,9 +230,16 @@ Submit the job from the directory holding your executable (or modify the batch s
 Useful PBS/Torque commands are
 * `qstat` --- see all queued/running jobs
 * `qstat -u <username>` --- to see just your jobs
-* `qstat -f <jobid?>` --- to see detailed info about a job
+* `qstat -f <jobid>` --- to see detailed info about a job
 * `qstat -Q` and `qstat -q` --- to see info about batch queues (for the summer school only `molssi` is available)
 * `qdel <jobid>` --- to cancel a job
+and for SLURM
+* `squeue` --- see all queued/running jobs
+* `squeue -u <username>` --- to see just your jobs
+* `scontrol show job <jobid>` --- to see detailed info about a job
+* `sinfo` --- to see info about batch queues
+* `scancel <jobid>` --- to cancel a job
+
 
 ##  4. Sending and receiving messages --- point to point communication
 
