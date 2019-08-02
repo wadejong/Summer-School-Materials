@@ -6,6 +6,8 @@
 
 // Now running in 3.6 cyles/sample --- 20 faster than the original!
 
+// Why is it almost exactly 2x faster than the d.p. version?
+
 #include <cmath> // for exp
 #include <iostream> // for cout, endl
 #include <cstdlib> // for random
@@ -16,7 +18,7 @@
 
 const int NWARM = 10000;  // Number of iterations to equilbrate (aka warm up) population
 const int NITER = 100000; // Number of iterations to sample
-const int N = 1024;     // Population size
+const int N = 1024;     // Population size (tried making smaller to improve caching, but no significant effect?)
 
 float srand() {
     const float fac = 1.0/(RAND_MAX-1.0);

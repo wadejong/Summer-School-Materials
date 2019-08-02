@@ -28,7 +28,7 @@
 
 const int NWARM = 10000;  // Number of iterations to equilbrate (aka warm up) population
 const int NITER = 100000; // Number of iterations to sample
-const int N = 1024;     // Population size
+const int N = 1024;     // Population size (tried making smaller to improve caching, but no significant effect?)
 
 double drand() {
     const double fac = 1.0/(RAND_MAX-1.0);
