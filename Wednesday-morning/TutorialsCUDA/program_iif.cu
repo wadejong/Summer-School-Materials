@@ -93,7 +93,7 @@ __global__ void ParticleSimulator()
   }
   __syncthreads();
   
-  //  A more advanced way, using L1 __shared__ memory
+  //  A more advanced way, using registers
   float qq = (float)0.0;
   int nstripes = (cSh.nparticle + 31) / 32;
   int bpos = nstripes - warpIdx - 1;
@@ -392,8 +392,7 @@ int main()
   // available).
   srand(62052);
   
-  // We have allocated for a maximum of 100 particles,
-  // but let's say there are only 47 in this case.
+  // Place many, many particles
   np = 97913;
   for (i = 0; i < np; i++) {
 

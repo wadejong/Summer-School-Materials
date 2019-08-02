@@ -80,7 +80,19 @@ typedef struct GpuMirroredFloat gpuFloat;
 //-----------------------------------------------------------------------------
 __global__ void InitializeForces()
 {
+  int i;
 
+  i = (blockIdx.x * blockDim.x) + threadIdx.x;
+  while (i < cSh.nparticle) {
+    cSh.partFrcX[i] = (float)0.0;
+    cSh.partFrcY[i] = (float)0.0;
+    cSh.partFrcZ[i] = (float)0.0;
+    i += gridDim.x * blockDim.x;
+  }
+  if (threadIdx.x == 0 && blockIdx.x == 0) {
+    int nstripes = (cSh.nparticle + 31) / 32;
+    cSh.gblbpos[0] = nstripes - (gridDim.x * (blockDim.x / 32)) - 1;
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -88,7 +100,143 @@ __global__ void InitializeForces()
 //-----------------------------------------------------------------------------
 __global__ void ParticleSimulator()
 {
+  int i;
+  
+  int warpIdx = threadIdx.x / 32;
+  int tgx = (threadIdx.x & 31);
 
+  // Expanding the earlier method, using a warp counter in global
+  float qq = (float)0.0;
+  int nstripes = (cSh.nparticle + 31) / 32;
+  int bpos = nstripes - (blockIdx.x * (blockDim.x / 32)) - warpIdx - 1;
+  while (bpos >= 0) {
+
+    // Read 32 particles into registers rather than __shared__ memory.
+    int prtclIdx = 32*bpos + tgx;
+    float pX, pY, pZ, pQ;
+    if (prtclIdx < cSh.nparticle) {
+      pX = cSh.partX[prtclIdx];
+      pY = cSh.partY[prtclIdx];
+      pZ = cSh.partZ[prtclIdx];
+      pQ = cSh.partQ[prtclIdx];
+    }
+    else {
+      pX = (float)10000.0 + (float)(prtclIdx);
+      pY = (float)10000.0 + (float)(prtclIdx);
+      pZ = (float)10000.0 + (float)(prtclIdx);
+      pQ = (float)0.0;
+    }
+    
+   // Loop over all particle pairs in the lower half triangle as before
+    int tpos = 0;
+    while (tpos <= bpos) {
+
+      // Initialize particles as in the outer loop
+      int prtclIdx = 32*tpos + tgx;
+      float tX, tY, tZ, tQ;
+      if (prtclIdx < cSh.nparticle) {
+        tX = cSh.partX[prtclIdx];
+        tY = cSh.partY[prtclIdx];
+        tZ = cSh.partZ[prtclIdx];
+        tQ = cSh.partQ[prtclIdx];
+      }
+      else {
+
+        // The offsets for particle positions must run along a different
+        // (parallel, but distinct) line so that not even dummy particles
+        // can ever occupy the same positions and cause a divide-by-zero.
+        // As before, the charge of the dummy particles is zero.
+        tX = (float)10100.0 + (float)(prtclIdx);
+        tY = (float)10200.0 + (float)(prtclIdx);
+        tZ = (float)10300.0 + (float)(prtclIdx);
+        tQ = (float)0.0;
+      }
+
+      // Initialize tile force accumulators
+      float sfpX = (float)0.0;
+      float sfpY = (float)0.0;
+      float sfpZ = (float)0.0;
+      float sftX = (float)0.0;
+      float sftY = (float)0.0;
+      float sftZ = (float)0.0;
+
+      // Indexing gets a bit more complex.  Again, if we are on a
+      // diagonal tile skip the first iteration of the loop, as
+      // boths sets of 32 particles are the same.
+      int imin = (bpos == tpos);
+      float anti2xCountingFactor = (bpos == tpos) ? (float)0.5 : (float)1.0;
+      for (i = imin; i < 32; i++) {
+
+	// Find the thread to query
+        int j = tgx + i;
+        j -= (j >= 32) * 32;
+
+	// Compute the interaction
+        float dx    = __shfl_sync(0xffffffff, tX, j) - pX;
+        float dy    = __shfl_sync(0xffffffff, tY, j) - pY;
+        float dz    = __shfl_sync(0xffffffff, tZ, j) - pZ;
+        float r2    = dx*dx + dy*dy + dz*dz;
+        float r     = sqrt(r2);
+        float qfac  = anti2xCountingFactor *
+                      __shfl_sync(0xffffffff, tQ, j) * pQ;
+        qq         += qfac / sqrt(r2);
+
+	// Log the interaction on this thread
+	float fmag = qfac / (r2 * r);
+	float fx = dx * fmag;
+	float fy = dy * fmag;
+	float fz = dz * fmag;
+	sfpX += fx;
+	sfpY += fy;
+	sfpZ += fz;
+
+	// Find the other thread that queried this one.
+	// __shfl_sync contains a warp synchronization
+	// instruction, so no __syncwarp() is needed.
+	int k = tgx - i;
+	k += (k < 0) * 32;
+	sftX -= __shfl_sync(0xffffffff, fx, k);
+	sftY -= __shfl_sync(0xffffffff, fy, k);
+	sftZ -= __shfl_sync(0xffffffff, fz, k);
+      }
+
+       // Contribute the tile force accumulations atomically to global memory
+      // (DRAM).  This is only about 2x slower than atomic accumulation to
+      // __shared__.  Accumulating things like this atomically to __shared__
+      // would make the kernel run only about 30% slower than accumulating
+      // them in an unsafe manner, willy-nilly.  Fast atomics to global are
+      // a tremendous accomplishment by NVIDIA engineers!
+      //
+      // Note, the correspondence between 32*bpos + tgx or 32*tpos + tgx
+      // and 32*warpIdx + tgx.  32*warpIdx + tgx is, again, threadIdx.x.
+      atomicAdd(&cSh.partFrcX[32*bpos + tgx], sfpX);
+      atomicAdd(&cSh.partFrcY[32*bpos + tgx], sfpY);
+      atomicAdd(&cSh.partFrcZ[32*bpos + tgx], sfpZ);
+      atomicAdd(&cSh.partFrcX[32*tpos + tgx], sftX);
+      atomicAdd(&cSh.partFrcY[32*tpos + tgx], sftY);
+      atomicAdd(&cSh.partFrcZ[32*tpos + tgx], sftZ);
+
+      // Increment the tile counter
+      tpos++;
+    }
+
+    // Increment stripe counter
+    if (tgx == 0) {
+      bpos = atomicAdd(&cSh.gblbpos[0], -1);
+    }
+    bpos = __shfl_sync(0xffffffff, bpos, 0);
+  }
+  
+  // Reduce the energy contributions in each warp.
+  // Add the warp contribution to the global sum.
+  qq += __shfl_down_sync(0xffffffff, qq, 16);
+  qq += __shfl_down_sync(0xffffffff, qq,  8);
+  qq += __shfl_down_sync(0xffffffff, qq,  4);
+  qq += __shfl_down_sync(0xffffffff, qq,  2);
+  qq += __shfl_down_sync(0xffffffff, qq,  1);
+  if (tgx == 0) {
+    atomicAdd(&cSh.Etot[0], qq);
+  }
 }
 
 //-----------------------------------------------------------------------------
