@@ -52,6 +52,10 @@ References:
 
 * [Seawulf getting started guide](https://it.stonybrook.edu/help/kb/getting-started-guide)
 
+* [Seawulf SLURM FAQ](https://it.stonybrook.edu/help/kb/using-the-slurm-workload-manager)
+
+* [SLURM reference](https://slurm.schedmd.com/documentation.html)
+
 
 ## 3. Useful links
 
@@ -69,6 +73,8 @@ References:
 
 * [Intel C++](https://software.intel.com/en-us/cpp-compiler-18.0-developer-guide-and-reference) compiler documentation
 
+* [GNU C/C++](https://gcc.gnu.org/onlinedocs/gcc-9.1.0/gcc) compiler documentation
+
 * [MPI books](http://wgropp.cs.illinois.edu/usingmpiweb/) by Gropp good for intro and reference
 
 
@@ -85,7 +91,7 @@ References:
 
 ### Writing hello world
 
-Start from sequential version [`exercises/hello.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/hello.cc)
+Start from sequential version [`exercises/hello.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/MPI/exercises/hello.cc)
 ```c++
     #include <iostream>
     int main() {
@@ -121,7 +127,7 @@ or this if you are handling errors
 * By default errors abort (i.e., the error handler is `MPI_ERRORS_ARE_FATAL`).  If you want MPI to return errors for you to handle, you can call [`MPI_Errhandler_set`](https://www.mpich.org/static/docs/v3.2/www3/MPI_Errhandler_set.html)`(MPI_COMM_WORLD, MPI_ERRORS_RETURN)`.
 * To abort execution you cannot just `exit` or `return` because there's lots of clean up that needs to be done when running in parallel --- a poorly managed error can easily waste 1000s of hours of computer time.  You must call `MPI_Abort` to exit with an error code.
 
-The new version ([`exercises/mpihello.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/mpihello.cc)) looks like this
+The new version ([`exercises/mpihello.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/MPI/exercises/mpihello.cc)) looks like this
 ```c++
     #include <mpi.h>
     #include <iostream>
@@ -176,54 +182,47 @@ We used four processes on the local machine (e.g., your laptop or the cluster lo
 * queue jobs according to priority, resource needs, etc.
 
 
-Here's an example batch job ([`exercises/mpihello.pbs`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/mpihello.pbs)) for SeaWulf annotated so show what is going on:
-~~~
-    #!/bin/bash
-    #PBS -l nodes=2:ppn=24,walltime=00:02:00
-    #PBS -q molssi
-    #PBS -N hello
-    #PBS -j oe
-
-    # Above says:
-    # - job has 2 (dedicated) nodes with 24 processes per node with a 2 minute max runtime
-    # - use the molssi queue
-    # - name the job "hello"
-    # - merge the standard output and error into one file
-
-    # Output should appear in the file "<jobname>.o<jobnumber>" in the
-    # directory from which you submitted the job
-
-    # ================================================
-    # If this is not in your .bashrc it needs to be here so that your job
-    # uses the same compilers/libraries that you compiled with
-    source /gpfs/projects/molssi/modules-intel
-
-    # This will change to the directory from which you submitted the job
-    # which we assume below is the one holding the executable
-    cd $PBS_O_WORKDIR
-
-    # Uncomment this if you want to see other PBS environment variables
-    # env | grep PBS
-
-    # Finally, run the executable using $PBS_NUM_NODES*$PBS_NUM_PPN
-    # processes spread across all the nodes
-    mpirun ./mpihello
-
-    # You can run more things below
-~~~
-But I find the comments distracting, so here ([`exercises/mpihello.pbs`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/mpihello_minimal.pbs)) is a minimal version.
+Here's an example batch job ([`exercises/mpihello.sbatch`](https://github.com/wadejong/Summer-School-Materials/blob/master/MPI/exercises/mpihello.sbatch)) for SeaWulf annotated so show what is going on (this is for SLURM ---  look at the `*.pbs` version for PBS/Torque):
 ~~~
      #!/bin/bash
-     #PBS -l nodes=2:ppn=24,walltime=00:02:00
-     #PBS -q molssi -N hello -j oe
+     #SBATCH --nodes=2 --tasks-per-node=40 --cpus-per-task=1 --time=00:05:00 --job-name=test -p debug-40core
 
-     source /gpfs/projects/molssi/modules-intel
-     cd $PBS_O_WORKDIR
+     # Above says:
+     # - job has 2 (dedicated) nodes with 40 processes per node and one cpu/thread per process with a 5 minute max runtime
+     # - use the debug-40core queue
+     # - name the job "test"
+     # - (slurm by default merges the standard output and error into one file)
+
+     # Output should appear in the file "slurm-<jobnumber>.out" in the
+     # directory from which you submitted the job
+
+     # ================================================
+     # Slurm by default 
+     # * copies your environment variables from when you submitted the job, so if your
+     #   modules were correct at time then you don't need to load them here.  If not
+     #   you should execute the following command
+     #   source /gpfs/projects/molssi/modules-gnu
+     # * starts the job running in the same directory that you submitted it from.
+
+     # Uncomment this if you want to see other SLURM environment variables
+     #env | grep SLURM
+
+     # Finally, run the executable using #tasks_per_node on each of #nodes
+     mpirun ./mpihello
+
+     # You can run more things below or use different numbers of processes
+     #mpirun -np 4 ./mpihello
+~~~
+But I find the comments distracting, so here ([`exercises/mpihello.sbatch`](https://github.com/wadejong/Summer-School-Materials/blob/master/MPI/exercises/mpihello_minimal.sbatch)) is a minimal version.
+~~~
+     #!/bin/bash
+     #SBATCH --nodes=2 --ntasks-pepr-node=40 --cpus-per-task=1 --time=00:05:00 --job-name=test -p debug-40core
+
      mpirun ./mpihello
 ~~~
-You can copy and edit the file for your other jobs.  Note that other other systems running PBS will differ.
+You can copy and edit the file for your other jobs.  Note that other other systems running PBS and other schedulers will differ.
 
-Submit the job from the directory holding your executable (or modify the batch script to use the full path to your executable)
+Submit the job from the directory holding your executable (or modify the batch script accordingly)
 ~~~
     qsub mpihello.pbs
 ~~~
@@ -231,9 +230,17 @@ Submit the job from the directory holding your executable (or modify the batch s
 Useful PBS/Torque commands are
 * `qstat` --- see all queued/running jobs
 * `qstat -u <username>` --- to see just your jobs
-* `qstat -f <jobid?>` --- to see detailed info about a job
+* `qstat -f <jobid>` --- to see detailed info about a job
 * `qstat -Q` and `qstat -q` --- to see info about batch queues (for the summer school only `molssi` is available)
 * `qdel <jobid>` --- to cancel a job
+
+and for SLURM
+* `squeue` --- see all queued/running jobs
+* `squeue -u <username>` --- to see just your jobs
+* `scontrol show job <jobid>` --- to see detailed info about a job
+* `sinfo` --- to see info about batch queues
+* `scancel <jobid>` --- to cancel a job
+
 
 ##  4. Sending and receiving messages --- point to point communication
 
@@ -428,13 +435,13 @@ There are many pre-defined reduction operation and you can also define your own
 
 ### Exercise
 
-In [`exercises/pi_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/pi_seq.cc) is a (now traditional) Monte Carlo program to compute the value of pi.  Make it run in parallel using broadcast and reduce.  Increase the number of points to demonstrate a speedup.
+In [`exercises/pi_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/MPI/exercises/pi_seq.cc) is a (now traditional) Monte Carlo program to compute the value of pi.  Make it run in parallel using broadcast and reduce.  Increase the number of points to demonstrate a speedup.
 
 We will walk through the solution together since this is an important example.
 
 ### Exercise:
 
-In [`exercises/trapezoid_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/trapezoid_seq.cc) is a sequential program that uses the trapezoid rule to estimate the value of the integral
+In [`exercises/trapezoid_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/MPI/exercises/trapezoid_seq.cc) is a sequential program that uses the trapezoid rule to estimate the value of the integral
 
 <img src="https://latex.codecogs.com/svg.latex?\Large&space;\int&#95;{-6}^{6}\exp(-x^2)\cos(3x)\,dx" title="Amdahl" />
 
@@ -542,8 +549,8 @@ There are some powerful visual parallel debuggers that understand MPI, but since
 
 ## 7. Work and data distribution strategies
 
-* partitioning the iterations of an outer loop (see [`exercises/trapezoid_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/trapezoid_seq.cc) and parallel version)
-* using a counter to distribute the iterations of a nest of loops (see [`exercises/nest_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/nest_seq.cc) and parallel veersion)
+* partitioning the iterations of an outer loop (see [`exercises/trapezoid_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/MPI/exercises/trapezoid_seq.cc) and parallel version)
+* using a counter to distribute the iterations of a nest of loops (see [`exercises/nest_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/MPI/exercises/nest_seq.cc) and parallel veersion)
 * master slave model
 * replicated vs. distributed data
 * systolic loop
@@ -564,9 +571,9 @@ There are some powerful visual parallel debuggers that understand MPI, but since
 1. [easy] Skim through some of the other tutorials and documentation that have links provided above
 2. [easy-medium] Write a program to benchmark the performance of reduce, all-reduce, broadcast as a function of both N and P.  Use N=1,2,4,8,...,1024*1024 doubles. And experiment with processes on the same node and on
 different nodes (this means setting #nodes and #ppn correctly in the PBS file).
-4. [easy] Parallelize Monte Carlo computation of pi starting from [`exercises/pi_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/pi_seq.cc) using global operations
+4. [easy] Parallelize Monte Carlo computation of pi starting from [`exercises/pi_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/MPI/exercises/pi_seq.cc) using global operations
 4. [easy] Work through the other various examples in the `exercises/` directory
-5. [medium] Parallelize the recursively adaptive quadrature program [`exercises/recursive_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Tuesday-afternoon/exercises/recursive_seq.cc)
+5. [medium] Parallelize the recursively adaptive quadrature program [`exercises/recursive_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/MPI/exercises/recursive_seq.cc)
 6. [medium-hard] Write MPI versions of the example SCF, VMC, or MD codes in the main [chemistry examples directory](https://github.com/wadejong/Summer-School-Materials/blob/master/examples).  This tree includes example programs for Hartree Fock, molecular dynamics (already seen in the OpenMP lecture), and variational quantum Monte Carlo.  Sequential, OpenMP, and MPI versions are provided, and the `README` in each directory gives more details.  There's lots of different approaches so don't take our parallel versions as definitive.
     * VMC is the easiest
     * MD is also easy to get started, but harder to get best performance

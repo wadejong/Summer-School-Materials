@@ -4,3 +4,7 @@ Example molecular science application codes:
 * Variational quantum Monte Carlo
 
 Each directory contains sequential, OpenMP, MPI versions.
+
+Misc other examples
+* CUDA
+* Vector

@@ -1,5 +1,8 @@
-CXX = mpiicpc
-CXXFLAGS = -xHOST -O3 -ipo -no-prec-div
+CXX = mpicxx
+CXXFLAGS = -Ofast -fopenmp
+
+#CXX = mpiicpc
+#CXXFLAGS = -xHOST -O3 -ipo -no-prec-div
 
 TARGETS = md
 
