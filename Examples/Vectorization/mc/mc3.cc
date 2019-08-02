@@ -1,7 +1,7 @@
 // This version uses the MKL vectors statistics library random number
 // generator ... it's faaaaast.
 
-// Runs in ~8.2 cycles/sample on my laptop
+// Runs in ~8.2 cycles/sample on my laptop (~4.0 on sn-mem)
 
 // This is more like it.  It is now 8.6x faster than our original version.
 
@@ -63,6 +63,7 @@ int main() {
     uint64_t Xstart = cycle_count();
     for (int iter=0; iter<NITER; iter++) {
         vrand(2*N, r);
+#pragma simd reduction(+: sum)
         for (int i=0; i<N; i++) {
             kernel(x[i], p[i], r[i], r[i+N]);
             sum += x[i];

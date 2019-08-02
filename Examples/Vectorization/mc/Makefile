@@ -1,16 +1,14 @@
 
 TARGETS = exptest mc0 mc1 mc2 mc3 mc4 mc5
 
-MKLROOT = /opt/intel/mkl
-LDFLAGS = -L$(MKLROOT)/lib/intel64 -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
+CXX = icpc
+CXXFLAGS = -xHOST -O3 -ipo -no-prec-div -fp-model fast=2 -qopt-report=5 -qopt-report-phase=vec -mkl=sequential -qopt-zmm-usage=high
 
-#CXX = icpc
-#CXXFLAGS = -xHOST -O3 -ipo -no-prec-div -fp-model fast=2 -opt-report -mkl=sequential
+#CXX = g++
+#CXXFLAGS = -Ofast -march=native -m64 -I$(MKLROOT)/include -fopt-info-vec-all -fopenmp -lmvec -lm
 
-CXX = g++
-
-# try Ofast, O3, O2, O1
-CXXFLAGS = -Ofast -march=native -fopt-info-vec-optimized -m64 -I$(MKLROOT)/include
+#MKLROOT = /opt/intel/mkl # should be set in environment already
+LDFLAGS = -L$(MKLROOT)/lib/intel64 -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_sequential -lmkl_core 
 
 all:	$(TARGETS)
 

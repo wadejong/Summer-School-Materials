@@ -1,6 +1,6 @@
 // This version switches the loop orders and introduces two vectors in an attempt to vectorize the loops.
 
-// Runs at ~71.1 cycles/sample on my laptop
+// Runs at ~71.1 cycles/sample on my laptop (~48.5 on sn-mem)
 
 // Why does vectorization fail this time?
 
