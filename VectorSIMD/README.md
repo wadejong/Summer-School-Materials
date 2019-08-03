@@ -74,17 +74,17 @@ E.g., floating point multiplication with a 3 stage pipeline (we'll ignore the ne
 
 The first result takes $L=3$ cycles to appear, but after that we get one result per clock cycle.  Thus, the execution time (cycles) is
 ~~~
-    T = L + n
+    T = L + n - 1
 ~~~
 Note that there are some empty stages while the pipleline is filling up and draining, so our efficiency is not 100% unless we have very large *n*
 
 #### Exercise: how big must *n* be to reach 50% of peak performance --- this is Hockney's <a href="https://www.codecogs.com/eqnedit.php?latex=n_{1/2}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{1/2}" title="n_{1/2}" /></a>.  
 
-The speed (operations per cycle) is *n/T  = n / (L+n)*.  The peak speed is 1 op/cycle, so 50% of peak speed is *1/2*.  Solving <a href="https://www.codecogs.com/eqnedit.php?latex=n_{1/2}&space;=&space;L" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{1/2}&space;=&space;L" title="n_{1/2} = L" /></a>.
+The speed (operations per cycle) is *n/T  = n / (L+n-1)*.  The peak speed is 1 op/cycle, so 50% of peak speed is *1/2*.  Solving <a href="https://www.codecogs.com/eqnedit.php?latex=n_{1/2}&space;=&space;L-1" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{1/2}&space;=&space;L-1" title="n_{1/2} = L-1" /></a>.
 
-What about for 90% of peak speed?  <a href="https://www.codecogs.com/eqnedit.php?latex=n_{90\%}&space;=&space;9&space;L" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{90\%}&space;=&space;9&space;L" title="n_{90\%} = 9 L" /></a>
+What about for 90% of peak speed?  <a href="https://www.codecogs.com/eqnedit.php?latex=n_{90\%}&space;=&space;9&space;(L-1)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{90\%}&space;=&space;9&space;(L-1)" title="n_{90\%} = 9 (L-1)" /></a>
 
-What about for 99% of peak speed?  <a href="https://www.codecogs.com/eqnedit.php?latex=n_{99\%}&space;=&space;99&space;L" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{99\%}&space;=&space;99&space;L" title="n_{99\%} = 99 L" /></a>
+What about for 99% of peak speed?  <a href="https://www.codecogs.com/eqnedit.php?latex=n_{99\%}&space;=&space;99&space;(L-1)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{99\%}&space;=&space;99&space;(L-1)" title="n_{99\%} = 99 (L-1)" /></a>
 
 
 ### 4. Quick review of SIMD with focus on x86
