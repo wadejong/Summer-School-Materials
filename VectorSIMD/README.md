@@ -159,7 +159,8 @@ and the actual computation becomes a single predicated vector operation
 Before we had predicated vector instructions, the compiler had to do a lot more work to produce vector code which was also much slower.  As a result, lots of loops were just marked unvectorizable either because the compiler could not figure it out or it did not seem worthwhile.  Nowadays, most simple predicates are vectorizable.
 
 Examples of AVX512 operations:
-|Operation and souces/targets             | Description                                             |
+
+|Operation and sources/targets             | Description                                             |
 |-----------------------------------------|---------------------------------------------------------|
 |VADDPD zmm1 {k1}, zmm2,zmm3/m512/m64bcst |  Add packed double-precision floating-point values from |
 |                                         |  zmm3/m512/m64bcst to zmm2 and store result in zmm1     |
