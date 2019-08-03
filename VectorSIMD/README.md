@@ -266,13 +266,13 @@ or, equivalently, from the Intel Vector Math Library (VML)
 
 Before you run test --- what do you expect to see?
 
-On `sn-mem` compile and run in [`Examples/Vectorization/bench`](https://github.com/wadejong/Summer-School-Materials/blob/master/MPI/exercises/mpihello.sbatch)
+On `sn-mem` compile and run in [`Examples/Vectorization/bench`](https://github.com/wadejong/Summer-School-Materials/blob/master/Examples/Vectorization/bench)
 
 ### 5.1 Observations
 
 In the figure are cycles/element for DAXY as a function of N (the x-axis being on a log scale)
 
-![measured](plot.png  "DAXPY cycles/element")
+![measured](https://github.com/wadejong/Summer-School-Materials/blob/master/VectorSIMD/plot.gif  "DAXPY cycles/element")
 
 ### 5.2 Analysis
 
