@@ -25,10 +25,9 @@ There can be a factor of 128 or greater between the performance of serial code a
 Nearly all of the recent x86 architectural enhancements relating to HPC or data-intensive applications have come from enhanced vectorization and specialized functional units.
 
 Key elements of modern CPU were architecture already covered in the introduction
-* multi-issue instructions
-* SIMD instructions
+* multi-issue instruction architecture
 * pipelining
-* registers
+* scalar and SIMD registers
 * cache
 * memory
 * multiple cores
@@ -37,7 +36,7 @@ and now we put your understanding into practice.
 
 ### 5. Quick review of program execution
 
-There are multiple function units, e.g.,
+There are multiple functional units, e.g.,
 * integer arithmetic and adress computation
 * floating point arithmetic
 * memory read
@@ -46,15 +45,13 @@ There are multiple function units, e.g.,
 
 and in most processors it is usually possible in a single clock cycle to issue an instruction to 
 
-Instructions are read from the executable, decoded, and the execution engine (often with possibly speculative look ahead) tries to bundle as many instructions to independent function units as possible for issue each clock cycle.
-
-
+Instructions are read from memory, decoded, and the execution engine (with dependency analysis and possibly speculative look ahead) tries to bundle as many instructions for each independent functional units as possible for issue each clock cycle.
 
 ### 3. Quick review of pipelining
 
 A complex instruction may take multiple cycles to complete --- the *latency* (*L*).
 
-Pipelining tries hides this latency so that you can get a result every clock cycle instead of every *L* clock cycles.  This is accomplished by dividing the operation into multiple stages, one per cycle, and overlapping stages of performing successive operations
+Pipelining tries to hides this latency so that you can get a result every clock cycle instead of every *L* clock cycles.  This is accomplished by dividing the operation into multiple stages, one per cycle, and overlapping stages of performing successive operations
 
 E.g., floating point multiplication with a 3 stage pipeline (we'll ignore the necessary memory accesses and just imagine the data is already loaded into the registers)
 ~~~
@@ -80,9 +77,9 @@ Note that there are some empty stages while the pipleline is filling up and drai
 
 #### Exercise: how big must *n* be to reach 50% of peak performance --- this is Hockney's <a href="https://www.codecogs.com/eqnedit.php?latex=n_{1/2}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{1/2}" title="n_{1/2}" /></a>.  
 
-The speed (operations per cycle) is *n/T  = n / (L+n-1)*.  The peak speed is 1 op/cycle, so 50% of peak speed is *1/2*.  Solving <a href="https://www.codecogs.com/eqnedit.php?latex=n_{1/2}&space;=&space;L-1" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{1/2}&space;=&space;L-1" title="n_{1/2} = L-1" /></a>.
+The speed (operations per cycle) is *n/T  = n / (L+n-1)*.  The peak speed is 1 op/cycle, so 50% of peak speed is *1/2*.  Solving <a href="https://www.codecogs.com/eqnedit.php?latex=n_{1/2}&space;=&space;L-1" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{1/2}&space;=&space;L-1" title="n_{1/2} = L-1" /></a>.  Verify from the table that 50% of peak speed is obtained with *n=2*.
 
-What about for 90% of peak speed?  <a href="https://www.codecogs.com/eqnedit.php?latex=n_{90\%}&space;=&space;9&space;(L-1)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{90\%}&space;=&space;9&space;(L-1)" title="n_{90\%} = 9 (L-1)" /></a>
+What about for 90% of peak speed?  <a href="https://www.codecogs.com/eqnedit.php?latex=n_{90\%}&space;=&space;9&space;(L-1)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{90\%}&space;=&space;9&space;(L-1)" title="n_{90\%} = 9 (L-1)" /></a>.  For our example, we will need a vector length of 9*2=18 to reach 90% of peak speed.
 
 What about for 99% of peak speed?  <a href="https://www.codecogs.com/eqnedit.php?latex=n_{99\%}&space;=&space;99&space;(L-1)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{99\%}&space;=&space;99&space;(L-1)" title="n_{99\%} = 99 (L-1)" /></a>
 
@@ -91,13 +88,26 @@ What about for 99% of peak speed?  <a href="https://www.codecogs.com/eqnedit.php
 
 Instruction decode is expensive in chip area and power, and moving data from multiple registers to multiple functional units is similarly expensive.  By having a single instruction operate on multiple data (SIMD) we simplfy both instruction decode and data motion.  
 
+x86 register names:
+* xmm --- SSE 128-bit register (16 bytes, 8 shorts, 4 ints or floats, 2 doubles)
+* ymm --- AVX 256-bit register (32 bytes, ..., 4 doubles)
+* zmm --- AVX512 512-bit register (64 bytes, ..., 8 doubles)
+
+A SIMD instruction operates on all elements in a register.  E.g., *a\*b*
+<a href="https://www.codecogs.com/eqnedit.php?latex=\begin{pmatrix}a_0\\a_1\\a_2\\a_3\end{pmatrix}&space;*&space;\begin{pmatrix}b_0\\b_1\\b_2\\b_3\end{pmatrix}&space;\rightarrow&space;\begin{pmatrix}a_0&space;*&space;b_0\\a_1*b_1\\a_2*b_2\\a_3*b_3\end{pmatrix}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\begin{pmatrix}a_0\\a_1\\a_2\\a_3\end{pmatrix}&space;*&space;\begin{pmatrix}b_0\\b_1\\b_2\\b_3\end{pmatrix}&space;\rightarrow&space;\begin{pmatrix}a_0&space;*&space;b_0\\a_1*b_1\\a_2*b_2\\a_3*b_3\end{pmatrix}" title="\begin{pmatrix}a_0\\a_1\\a_2\\a_3\end{pmatrix} * \begin{pmatrix}b_0\\b_1\\b_2\\b_3\end{pmatrix} \rightarrow \begin{pmatrix}a_0 * b_0\\a_1*b_1\\a_2*b_2\\a_3*b_3\end{pmatrix}" /></a>
+
+Modern AVX transformed the ease of obtaining high peformance
+* wider registers
+* more registers
+* many more data types supported
+* gather+scatter (operate on non-contiguous data)
+* relax previous constraints on aligning data in memory
+* better support for reductions across a register
+* many more operations including math functions (sin, cos, ...)
+* fully predicated
 
 
-
-
-#### Exercise: how long must your vector be to obtain 90% of peak speed from a single, piplelined, SIMD functional unit with width *W* and latency *L*?
-
-  
+#### Exercise: how long must your vector be to obtain 90% of peak speed from a single, piplelined, SIMD functional unit with width *W=8* and latency *L=3*?  8*9*(3-1) = 144.   
 
 
 #### Exercise: what is the peak floating performance of a single core of sn-mem, and what do you have to do to get it?
