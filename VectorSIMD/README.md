@@ -162,12 +162,8 @@ Examples of AVX512 operations:
 
 |Operation and sources/targets             | Description                                             |
 |-----------------------------------------|---------------------------------------------------------|
-|VADDPD zmm1 {k1}, zmm2,zmm3/m512/m64bcst |  Add packed double-precision floating-point values from |
-|                                         |  zmm3/m512/m64bcst to zmm2 and store result in zmm1     |
-|                                         |  with writemask k1                                      |
-|VFMADD213PD zmm1 {k1},zmm2,zmm3/m512/m64bcst |  Multiply packed double-precision floating-point values from |
-|                                             |  zmm1 and zmm2, add to zmm3/m512/m64bcst and put result in zmm1 |
-|                                             |  with write mask k1                                 |
+|VADDPD zmm1 {k1}, zmm2,zmm3/m512/m64bcst |  Add packed double-precision floating-point values from zmm3/m512/m64bcst to zmm2 and store result in zmm1 with writemask k1 |
+|VFMADD213PD zmm1 {k1},zmm2,zmm3/m512/m64bcst |  Multiply packed double-precision floating-point values from zmm1 and zmm2, add to zmm3/m512/m64bcst and put result in zmm1 with write mask k1 |
 
 
 Fortunately, we humans no longer need to write in assembly language.
