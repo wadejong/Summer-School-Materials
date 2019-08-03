@@ -15,6 +15,15 @@ For this section we will be using the latest Intel Compiler so please execute th
 ~~~
 The latest GNU compiler is actually also pretty good at vectorization, but unfortunately it also needs an up-to-date GLIBC and the one currently installed on Seawulf is too old.
 
+### 1.1 Useful links
+
+
+
+* [Intel® Architecture Instruction Set Extensions and Future Features Programming Reference](https://software.intel.com/sites/default/files/managed/c5/15/architecture-instruction-set-extensions-programming-reference.pdf)
+
+* 
+
+
 
 ## 2. Big picture
 
@@ -51,7 +60,9 @@ Instructions are read from memory, decoded, and the execution engine (with depen
 
 A complex instruction may take multiple cycles to complete --- the *latency* (*L*).
 
-Pipelining tries to hides this latency so that you can get a result every clock cycle instead of every *L* clock cycles.  This is accomplished by dividing the operation into multiple stages, one per cycle, and overlapping stages of performing successive operations
+Pipelining tries to hides this latency so that you can get a result every clock cycle instead of every *L* clock cycles --- a factor of *L* speedup.
+
+This is accomplished by dividing the operation into multiple stages, one per cycle, and overlapping stages of performing successive operations
 
 E.g., floating point multiplication with a 3 stage pipeline (we'll ignore the necessary memory accesses and just imagine the data is already loaded into the registers)
 ~~~
@@ -93,6 +104,10 @@ x86 register names:
 * ymm --- AVX 256-bit register (32 bytes, ..., 4 doubles)
 * zmm --- AVX512 512-bit register (64 bytes, ..., 8 doubles)
 
+By operating on all *W* (width) elements simultaneously you get a factor of *W* speedup.
+
+An element in a vector register is often referred to as a lane (think of vector processing as parallel lanes of traffic moving lock step together). 
+
 A SIMD instruction operates on all elements in a register.  E.g., *a\*b*
 <a href="https://www.codecogs.com/eqnedit.php?latex=\begin{pmatrix}a_0\\a_1\\a_2\\a_3\end{pmatrix}&space;*&space;\begin{pmatrix}b_0\\b_1\\b_2\\b_3\end{pmatrix}&space;\rightarrow&space;\begin{pmatrix}a_0&space;*&space;b_0\\a_1*b_1\\a_2*b_2\\a_3*b_3\end{pmatrix}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\begin{pmatrix}a_0\\a_1\\a_2\\a_3\end{pmatrix}&space;*&space;\begin{pmatrix}b_0\\b_1\\b_2\\b_3\end{pmatrix}&space;\rightarrow&space;\begin{pmatrix}a_0&space;*&space;b_0\\a_1*b_1\\a_2*b_2\\a_3*b_3\end{pmatrix}" title="\begin{pmatrix}a_0\\a_1\\a_2\\a_3\end{pmatrix} * \begin{pmatrix}b_0\\b_1\\b_2\\b_3\end{pmatrix} \rightarrow \begin{pmatrix}a_0 * b_0\\a_1*b_1\\a_2*b_2\\a_3*b_3\end{pmatrix}" /></a>
 
@@ -101,14 +116,82 @@ Modern AVX transformed the ease of obtaining high peformance
 * more registers
 * many more data types supported
 * gather+scatter (operate on non-contiguous data)
-* relax previous constraints on aligning data in memory
+* relaxed previous constraints on aligning data in memory
 * better support for reductions across a register
 * many more operations including math functions (sin, cos, ...)
-* fully predicated
+* fully predicated (historically a key advantage of NVIDIA GPUs over x86 SIMD)
 
+### 4.1 SIMD on a long vector
+
+If the SIMD register is just *W* words wide, how do we operate on a vector of arbitrary length *N*?  The loop is tiled
+~~~
+   for (i=0;i<n;i++) a[i] = b[i]*10.0 + c[i];
+~~~
+becomes
+~~~
+   NR = n/W;
+   for (R=0; R<NR; R++,i+=W)
+      a[i:i+W] = b[i:i+W]*10.0 + c[i:i+W]; // vector op using Python slice notation
+   
+   for (;i<n;i++) a[i] = b[i]*10.0 + c[i]; // clean up loop
+~~~
+In practice, things can be more complex due to handling address misalignment, unrolling, etc.
+
+
+### 4.2 Predication
+
+There are lots of reasons for not wanting to operate (or write or read) on all elements in a SIMD register.  E.g., perhaps your vector is shorter than the register, or perhaps you have some test that must be true for data that you want to compute on (also termed computing under a mask).
+
+E.g., consider this loop
+~~~
+   for (i=0;i<n;i++) if (a[i]<10) a[i] = b[i]*10.0 + c[i];
+~~~
+
+A modern SIMD processor would compute a vector (mask) of boolean (bit) flags 
+~~~
+   for (i=0;i<n;i++) mask[i] = (a[i]<10);
+~~~
+and the actual computation becomes a single predicated vector operation
+~~~
+   FMA(mask, b, 10, c, a) --- where mask is true compute b*10+c and put result in a
+~~~
+
+Before we had predicated vector instructions, the compiler had to do a lot more work to produce vector code which was also much slower.  As a result, lots of loops were just marked unvectorizable either because the compiler could not figure it out or it did not seem worthwhile.  Nowadays, most simple predicates are vectorizable.
+
+Examples of AVX512 operations:
+|Operation and souces/targets             | Description                                             |
+|-----------------------------------------|---------------------------------------------------------|
+|VADDPD zmm1 {k1}, zmm2,zmm3/m512/m64bcst |  Add packed double-precision floating-point values from |
+|                                         |  zmm3/m512/m64bcst to zmm2 and store result in zmm1     |
+|                                         |  with writemask k1                                      |
+|-----------------------------------------|---------------------------------------------------------|
+|VFMADD213PD zmm1 {k1},zmm2,zmm3/m512/m64bcst |  Multiply packed double-precision floating-point values from |
+|                                             |  zmm1 and zmm2, add to zmm3/m512/m64bcst and put result in zmm1 |
+|                                             |  with write mask k1                                 |
+|-----------------------------------------|---------------------------------------------------------|
+
+
+Fortunately, we humans no longer need to write in assembly language.
+
+
+### 4.3 Memory alignment
+
+Historically, a load into vector register of width *W* bytes could only be performed from memory addresses that were appropriately aligned (usually on an address that was a multiple of *W*).  Subsequently, one could perform unaligned loads but only with a severe performance penalty.  Most recently, unaligned loads suffer a much lower peformance impact, but there can still benefit from aligning data.
+
+For best performance, try to align data structures and pad leading dimensions of multi-dimension structures accordingly.  Since this is not a big concern on modern x86 we won't dwell upon it.
+* Declare C++ variables using `alignas(W)`
+* Allocate on heap with `posix_memalign` or `std::aligned_alloc` (C++ 17)
+* Multi-dimension array `a[10][7]` perhaps best stored as `a[10][8]` for AVX
+
+### 4.4 Pipelined SIMD
+
+A factor of *L\*W* speedup compared to serial code.
+
+### 4.5 Exercises
+
+#### Exercise: what is the peak spead (operations/element/cycle) of a single, piplelined, SIMD functional unit with width *W=8* and latency *L=3*? 8.
 
 #### Exercise: how long must your vector be to obtain 90% of peak speed from a single, piplelined, SIMD functional unit with width *W=8* and latency *L=3*?  8*9*(3-1) = 144.   
-
 
 #### Exercise: what is the peak floating performance of a single core of sn-mem, and what do you have to do to get it?
 
@@ -156,7 +239,7 @@ Thus, the peak speed of a single core is 96 GFLOP/s in double precision (or 192 
     frequency * SIMD width * instruction throughput * ops/instruction  =  peak Gops/sec
        3.0    *    8       *          2             *      2           =     96
 ~~~
-and to get this performance we must issue 2 512-bit FMA instructions every single cycle.
+and to get this performance you must issue 2 512-bit FMA instructions every single cycle.
 
 
 [Aside: hence, the peak speed of the entire node is 72*96 GFLOP/s = 6.9 TFLOP/s, and for comparison the attached NVIDIA P100 is 4.7 TFLOP/s.]
@@ -168,13 +251,49 @@ and to get this performance we must issue 2 512-bit FMA instructions every singl
 #### Exercise: repeat the analysis for your laptop
 
 
+## 5.0 Benchmarking DAXPY
+
+Measure the cycles/iteration of this loop as a function of `n`
+~~~
+  for (int i=0; i<n; i++) {
+      y[i] = a*x[i] + y[i];
+  }
+~~~
+or, equivalently, from the Intel Vector Math Library (VML)
+~~~
+  cblas_daxpy (n, a, x, 1, y, 1);
+~~~
+
+Before you run test --- what do you expect to see?
+
+On `sn-mem` compile and run in [`Examples/Vectorization/bench`](https://github.com/wadejong/Summer-School-Materials/blob/master/MPI/exercises/mpihello.sbatch)
+
+### 5.1 Observations
+
+In the figure are cycles/element for DAXY as a function of N (the x-axis being on a log scale)
+
+![measured](plot.png  "DAXPY cycles/element")
+
+### 5.2 Analysis
+
+Theoretical peak speed on Skylake --- in one cycle can issue 
+* FMA AVX512 SIMD
+* 2 loads AVX512 SIMD
+* 1 store AVX512 SIMD
+* loop counter increment
+* test and branch
+
+The L1 cache is 32KB or 2048*64bytes (we have 2 d.p. vectors, so this is the number of elements that can fit into L1 assuming 
+
+and the L1 cache can, at least in theory, support full-speed memory access.
+
+So the entire loop can be written to execute in just one cycle! This would be a throughput of 0.125 cyles/element.  CBLAS best is 0.163, likely due to the L1 cache not being able to sustain the peak speed due to bank conflicts.
+
+[Aside: nice detailed analysis of Haswell cache access in the comments [here](https://software.intel.com/en-us/forums/intel-moderncode-for-parallel-architectures/topic/608964).]
 
 
 
-
-
-
-
+#### Exercise: change the loop stride from 1 to 2, 3, 4, 8, 12, 16, 256
 
 
 

@@ -10,7 +10,7 @@ using namespace std;
 
 double test(int n, double a, double * __restrict__ x, double * __restrict__ y) {
     uint64_t usedmin = 99999999999;
-    int niter = std::max(1, 4000/n);
+    int niter = std::max(3, 40000/n);
 
     for (int attempt=0; attempt<3; attempt++) {
         uint64_t start = cycle_count();
@@ -18,9 +18,9 @@ double test(int n, double a, double * __restrict__ x, double * __restrict__ y) {
 
 	  cblas_daxpy(n, a, x, 1, y, 1);
 
-	  //              for (int i=0; i<n; i++) {
+	  //for (int i=0; i<n; i++) {
 	  //                  y[i] += a*x[i];
-	  //              }
+	  //}
 
             y[1] += 0.1; // force optimizer to not reorder loops
         }
@@ -32,10 +32,10 @@ double test(int n, double a, double * __restrict__ x, double * __restrict__ y) {
 
 
 int main() {
-    const int NMAX = 1024*1024*16;
+    const int NMAX = 1024*1024*128;
     double a = 1.1;
-    double* x = new double[NMAX];
-    double* y = new double[NMAX];
+    alignas(64) double x[NMAX];
+    alignas(64) double y[NMAX];
     
     for (int i=0; i<NMAX; i++) {
         x[i] = 1.0;
@@ -48,11 +48,11 @@ int main() {
         std::cout << n << " " << test(n,a,x,y) << std::endl;
     }
 
-    for (int n=1024; n<32768; n+=64) {
+    for (int n=1024; n<131072; n+=128) {
         std::cout << n << " " << test(n,a,x,y) << std::endl;
     }
 
-    for (int n=32768; n<=NMAX; n*=2) {
+    for (int n=131072; n<=NMAX; n*=2) {
         std::cout << n << " " << test(n,a,x,y) << std::endl;
     }
 
