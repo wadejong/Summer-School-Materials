@@ -37,7 +37,7 @@ Key elements of modern CPU were architecture already covered in the introduction
 There are several major techniques for vector/SIMD programming
 * Auto-vectorization --- focus of this class
 * OpenMP SIMD pragmas --- not covered in detail here, but highly relevant if you are also using OpenMP for threading.
-* Use of (vendor-provided) optimized libraries --- always a good idea (note Intel MKL is now free)
+* Use of (vendor-provided) optimized libraries --- always a good idea (note Intel MKL is now free), though compiled code is now often nearly/just-as good especially for short vectors.  Unless the library gives a big performance boost, you might still prefer compiled code since it might kep the code more maintainble and portable.
 * SIMD vector intrinsics (assembly-level programming with some help from C++) --- not covered here and not encouraged unless you are really after peak speed
 * Assembly programming --- no need these days
 
@@ -212,9 +212,7 @@ There are multiple functional units, e.g.,
 * memory write
 * etc.
 
-and in most processors it is usually possible in a single clock cycle to issue an instruction to 
-
-Instructions are read from memory, decoded, and the execution engine (with dependency analysis and possibly speculative look ahead) tries to bundle as many instructions for each independent functional units as possible for issue each clock cycle.
+Instructions are read from memory, decoded, and the execution engine (with dependency analysis and possibly speculative look ahead) tries to bundle as many instructions as possible for issue each clock cycle, targetting independent functional units.
 
 ## 5. Quick review of pipelining
 
@@ -240,7 +238,7 @@ E.g., floating point multiplication with a 3 stage pipeline (we'll ignore the ne
 |  7    |        |        | a5*b5  | a4*b4  |
 |  8    |        |        |        | a5*b5  |
 
-The first result takes $L=3$ cycles to appear, but after that we get one result per clock cycle.  Thus, the execution time (cycles) is
+The first result takes *L=3* cycles to appear, but after that we get one result per clock cycle.  Thus, the execution time (cycles) is
 ~~~
     T = L + n - 1
 ~~~
@@ -248,7 +246,7 @@ Note that there are some empty stages while the pipeline is filling up and drain
 
 **Exercise:** How big must *n* be to reach 50% of peak performance --- this is Hockney's <a href="https://www.codecogs.com/eqnedit.php?latex=n_{1/2}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{1/2}" title="n_{1/2}" /></a>.  
 
-The speed (operations per cycle) is *n/T  = n / (L+n-1)*.  The peak speed is 1 op/cycle, so 50% of peak speed is *1/2*.  Solving <a href="https://www.codecogs.com/eqnedit.php?latex=n_{1/2}&space;=&space;L-1" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{1/2}&space;=&space;L-1" title="n_{1/2} = L-1" /></a>.  Verify from the table that 50% of peak speed is obtained with *n=2*.
+The speed (operations per cycle) is *n/T  = n / (L+n-1)*.  The peak speed is 1 op/cycle, so 50% of peak speed is *1/2*.  Solving gives <a href="https://www.codecogs.com/eqnedit.php?latex=n_{1/2}&space;=&space;L-1" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{1/2}&space;=&space;L-1" title="n_{1/2} = L-1" /></a>.  Verify from the table that 50% of peak speed is obtained with *n=2*.
 
 What about for 90% of peak speed?  <a href="https://www.codecogs.com/eqnedit.php?latex=n_{90\%}&space;=&space;9&space;(L-1)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{90\%}&space;=&space;9&space;(L-1)" title="n_{90\%} = 9 (L-1)" /></a>.  For our example, we will need a vector length of 9*2=18 to reach 90% of peak speed.
 
@@ -268,7 +266,8 @@ By operating on all *W* (width) elements simultaneously you get a factor of *W* 
 
 An element in a vector register is often referred to as a lane (think of vector processing as parallel lanes of traffic moving lock step together). 
 
-A SIMD instruction operates on all elements in a register.  E.g., *a\*b*
+A SIMD instruction operates on all elements in a register.  E.g., *a\*b* --- elementwise multiplication of two vectors
+
 <a href="https://www.codecogs.com/eqnedit.php?latex=\begin{pmatrix}a_0\\a_1\\a_2\\a_3\end{pmatrix}&space;*&space;\begin{pmatrix}b_0\\b_1\\b_2\\b_3\end{pmatrix}&space;\rightarrow&space;\begin{pmatrix}a_0&space;*&space;b_0\\a_1*b_1\\a_2*b_2\\a_3*b_3\end{pmatrix}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\begin{pmatrix}a_0\\a_1\\a_2\\a_3\end{pmatrix}&space;*&space;\begin{pmatrix}b_0\\b_1\\b_2\\b_3\end{pmatrix}&space;\rightarrow&space;\begin{pmatrix}a_0&space;*&space;b_0\\a_1*b_1\\a_2*b_2\\a_3*b_3\end{pmatrix}" title="\begin{pmatrix}a_0\\a_1\\a_2\\a_3\end{pmatrix} * \begin{pmatrix}b_0\\b_1\\b_2\\b_3\end{pmatrix} \rightarrow \begin{pmatrix}a_0 * b_0\\a_1*b_1\\a_2*b_2\\a_3*b_3\end{pmatrix}" /></a>
 
 Modern AVX transformed the ease of obtaining high performance
@@ -299,13 +298,13 @@ In practice, things can be much more complex due to handling address misalignmen
 
 ### 6.2 Sum example revisited --- looking at the assembly language
 
-Now we understand a bit more, let's look under the hood at what the compiler is doing at the sum example.  
+Now we understand a bit more, let's look under the hood at what the compiler is doing in the sum example.  
 
-**Exercise:** Look back again at the optimization report.  You should now understand why the projected speed up is 8 and what it means by remainder loop.
+**Exercise:** Look back again at the optimization report.  You should now understand why the projected speed might be estimated as 8 and what it means by remainder loop.
 
 The report said that it vectorized the code, but what did it actually do? Let's look at the assembly code it generated.  
 
-Since the assembly code can be *huge* it helps to use a bit of voodoo to insert comments around the bit we are interested in.  Modify `sum.cc` as follows
+Since the assembly code can be *huge* it helps to use a bit of voodoo to insert comments around the bit we are interested in.  Modify `sum.cc` as follows (insert the two `__asm__` lines)
 ~~~
 #include <iostream>
 
@@ -381,7 +380,7 @@ Look in `sum.s` and search for `startloop`.
 ...
 ~~~
 
-Often hard to understand the assembly code since the compiler knows a lot more about the machine than you.  However, it knows a lot less about your intentions than you. Nevertheless, this is clearly vector code that is somehow mixing use of the 512-bit `zmm*` and 256-bit `ymm*` registers.
+It is often hard to understand the assembly code since the compiler knows a lot more about the machine than you.  However, it knows a lot less about your intentions than you and it might still be suboptimal. Nevertheless, this is clearly vector code that is somehow mixing use of the 512-bit `zmm*` and 256-bit `ymm*` registers.
 
 ### 6.2 Predication
 
@@ -576,3 +575,6 @@ Look [here](https://github.com/wadejong/Summer-School-Materials/blob/master/Exam
      ddot FLOPS/cycle 2.7
       mkl FLOPS/cycle 27
 ~~~
+
+**Exercise:** Try compiling some of your own code to see how well it vectorizes, and then try to optimize it.
+
