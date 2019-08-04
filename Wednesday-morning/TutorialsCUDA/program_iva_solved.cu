@@ -186,18 +186,18 @@ __global__ void ParticleSimulator()
 	float fx = dx * fmag;
 	float fy = dy * fmag;
 	float fz = dz * fmag;
-	sfpX += fx;
-	sfpY += fy;
-	sfpZ += fz;
+	sfpX -= fx;
+	sfpY -= fy;
+	sfpZ -= fz;
 
 	// Find the other thread that queried this one.
 	// __shfl_sync contains a warp synchronization
 	// instruction, so no __syncwarp() is needed.
 	int k = tgx - i;
 	k += (k < 0) * 32;
-	sftX -= __shfl_sync(0xffffffff, fx, k);
-	sftY -= __shfl_sync(0xffffffff, fy, k);
-	sftZ -= __shfl_sync(0xffffffff, fz, k);
+	sftX += __shfl_sync(0xffffffff, fx, k);
+	sftY += __shfl_sync(0xffffffff, fy, k);
+	sftZ += __shfl_sync(0xffffffff, fz, k);
       }
 
        // Contribute the tile force accumulations atomically to global memory
