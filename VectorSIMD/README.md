@@ -3,7 +3,7 @@
 
 1.  Big picture
 1.  Useful links
-1.  Quick start
+1.  Auto-vectorization quick start
 1.  Quick review of program execution
 1.  Quick review of pipelining
 1.  SIMD with focus on x86
@@ -74,7 +74,7 @@ Lots of gory details (more than most of us need)
 * Agner Fog [Instruction tables](https://www.agner.org/optimize/instruction_tables.pdf)
 * Details about Skylake memory performance [here](https://www.anandtech.com/show/11544/intel-skylake-ep-vs-amd-epyc-7000-cpu-battle-of-the-decade/12) or [here](https://www.7-cpu.com/cpu/Skylake.html)
 
-## 3. Quick start --- Hello world vector style
+## 3. Auto-vectorization quick start
 
 On `sn-mem` compile (using `make sum`) and run in [`Examples/Vectorization`](https://github.com/wadejong/Summer-School-Materials/blob/master/Examples/Vectorization) the `sum.cc` program.
 ~~~
@@ -90,7 +90,7 @@ int main() {
     return 0;
 }
 ~~~
-It adds up the integers 0-99,999 and prints out the sum.  
+It adds up the integers 0-100,006 and prints out the sum.  
 
 What are the compiler flags doing?
 * `-xHOST` --- optimize for the machine on which you are compiling.  Clearly not a good idea if you will run on a different architecture.
@@ -166,7 +166,9 @@ I got
 
 ## 3.1 Requirements/recommendations for vectorizable loops
 
-1. Contiguous memory access (stride 1) --- non-unit stride access will be slow (since memory read/write are done on entire 64 byte cache lines, wasting bandwidth if you don't use the data).  Indexed read (gather) can inhibit vectorization and is in anycase slow unless most indices are nearly in order, and indexed write (scatter) will inhibit vectorization due to the write dependency.
+1. Contiguous memory access (stride 1) --- non-unit stride access will be slow (since memory read/write are done on entire 64 byte cache lines, wasting bandwidth if you don't use the data).  Indexed read (gather) can inhibit vectorization and is in anycase slow unless most indices are nearly in order, and indexed write (scatter) will inhibit vectorization due to the write dependency.  
+   * If there is a lot of computation, you can gather the data into a contiguous array in one loop, compute in a separate loop, and scatter the result in a final loop.
+   * The Intel MKL Vector Math Library [Pack/Unpack Functions](https://software.intel.com/en-us/mkl-developer-reference-c-vm-pack-unpack-functions) can accelerate converting strided/indexed/masked vectors to/from contiguous arrays.
 
 2. Aliasing can inibit vectorization --- i.e., the compiler cannot figure out if pointers/arrays refer to non-overlapping memory regions
    * a modern compiler will sometimes generate both scalar and vector code and test at runtime for aliasing
@@ -190,7 +192,7 @@ I got
             sum += x[i];
         }
 ~~~
-(for recent versions of GCC and Intel compilers prefer to use `#pragma omp simd reduction(":sum)` and enable OpenMP on the command line).
+(for recent versions of GCC and Intel compilers prefer to use `#pragma omp simd reduction(+:sum)` and enable OpenMP on the command line).
 
 If the compiler thinks there is a dependency, but you are confident there is not, you can insert a pragma before the loop.  E.g.,
 ~~~
