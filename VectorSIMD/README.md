@@ -150,14 +150,13 @@ LOOP END
 
 There's a more complicated version in [`sum_timed.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Examples/Vectorization/sum_timed.cc) that tries to measure the cost as the number of cycles per element.  
 
-#### Exercise: 
+**Exercise:**
 1. Make and run the `sum_timed` program
 2. Make clean,  add `-no-vec` (to disable vectorization) to the CXXFLAGS, make, and re-run
 
 I got 
-* vectorized: 0.0625 --- 16 elements per cycle!  This is as fast as it gets (see discussion below about DAXPY)
+* vectorized: 0.0625 --- 16 elements per cycle!  This is as fast as it gets on `sn-mem` (see discussion below about DAXPY)
 * un-vectorized: 1.625 --- 26x slower.  The `-no-vec` flag must have done some damage beyond just stopping vectorization.
-
 
 ## 5. Quick review of program execution
 
@@ -202,7 +201,7 @@ The first result takes $L=3$ cycles to appear, but after that we get one result 
 ~~~
 Note that there are some empty stages while the pipeline is filling up and draining, so our efficiency is not 100% unless we have very large *n*
 
-#### Exercise: how big must *n* be to reach 50% of peak performance --- this is Hockney's <a href="https://www.codecogs.com/eqnedit.php?latex=n_{1/2}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{1/2}" title="n_{1/2}" /></a>.  
+**Exercise:** How big must *n* be to reach 50% of peak performance --- this is Hockney's <a href="https://www.codecogs.com/eqnedit.php?latex=n_{1/2}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{1/2}" title="n_{1/2}" /></a>.  
 
 The speed (operations per cycle) is *n/T  = n / (L+n-1)*.  The peak speed is 1 op/cycle, so 50% of peak speed is *1/2*.  Solving <a href="https://www.codecogs.com/eqnedit.php?latex=n_{1/2}&space;=&space;L-1" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{1/2}&space;=&space;L-1" title="n_{1/2} = L-1" /></a>.  Verify from the table that 50% of peak speed is obtained with *n=2*.
 
@@ -257,7 +256,7 @@ In practice, things can be much more complex due to handling address misalignmen
 
 Now we understand a bit more, let's look under the hood at what the compiler is doing at the sum example.  
 
-Look back again at the optimization report.  You should understand why the projected speed up is 8 and what it means by remainder loop.
+**Exercise:** Look back again at the optimization report.  You should now understand why the projected speed up is 8 and what it means by remainder loop.
 
 The report said that it vectorized the code, but what did it actually do? Let's look at the assembly code it generated.  
 
@@ -388,13 +387,15 @@ Reference
 
 A factor of *L\*W* speedup compared to serial code.
 
+
+
 ### 4.5 Exercises
 
-#### Exercise: what is the peak spead (operations/element/cycle) of a single, piplelined, SIMD functional unit with width *W=8* and latency *L=3*? 8.
+**Exercise:** what is the peak spead (operations/element/cycle) of a single, piplelined, SIMD functional unit with width *W=8* and latency *L=3*? 8.
 
-#### Exercise: how long must your vector be to obtain 90% of peak speed from a single, piplelined, SIMD functional unit with width *W=8* and latency *L=3*?  8*9*(3-1) = 144.   
+**Exercise:** how long must your vector be to obtain 90% of peak speed from a single, piplelined, SIMD functional unit with width *W=8* and latency *L=3*?  8*9*(3-1) = 144.   
 
-#### Exercise: what is the peak floating performance of a single core of sn-mem, and what do you have to do to get it?
+**Exercise:** what is the peak floating performance of a single core of sn-mem, and what do you have to do to get it?
 
 
 Login into the Seawulf node `sn-mem` --- if you are already logged into a login node just do `ssh sn-mem`, otherwise from your laptop do
@@ -444,10 +445,10 @@ and to get this performance you must issue 2 512-bit FMA instructions every sing
 [Aside: hence, the peak speed of the entire node is 72*96 GFLOP/s = 6.9 TFLOP/s, and for comparison the attached NVIDIA P100 is 4.7 TFLOP/s.]
 
 
-#### Exercise: repeat the analysis for the Seawulf login node
+**Exercise:** Repeat the analysis for the Seawulf login node
 
 
-#### Exercise: repeat the analysis for your laptop
+**Exercise:** repeat the analysis for your laptop
 
 
 ## 5.0 Benchmarking DAXPY
@@ -482,7 +483,7 @@ Theoretical peak speed on Skylake --- in one cycle can issue
 * loop counter increment
 * test and branch
 
-So the entire loop can be written to execute in just one cycle, so the challenge is actually getting data to processor.  This would be a throughput of 0.125 cyles/element.  CBLAS best is 0.163, likely due to the L1 cache not being able to sustain the peak speed due to bank conflicts.
+So the entire loop can be written to execute in just one cycle, so the challenge is actually getting data from cache/memory to the processor.  This would be a throughput of 0.125 cyles/element.  CBLAS best is 0.163, likely due to the L1 cache not being able to sustain the peak speed due to bank conflicts.
 
 For small vector lengths we are dominated by overheads (loop, call, timing, ...).  On the figure we see break points at ~2K, ~60K, ~1M.
 * L1 cache (private to each core) can, at least in theory, support full-speed memory access.  Also, the L1 cache is 32KB or 2048*16bytes (we have 2 d.p. vectors, so 2028 is the maximum we can fit, but in practice collisions will mean less fits).
@@ -491,9 +492,9 @@ For small vector lengths we are dominated by overheads (loop, call, timing, ...)
 
 [Aside: nice detailed analysis of Haswell cache access in the comments [here](https://software.intel.com/en-us/forums/intel-moderncode-for-parallel-architectures/topic/608964).]
 
-#### Exercise: instead of timing the `cblas` routine time the compiled code (i.e., comment out `cblas_daxpy` and uncomment the loop)
+**Exercise:** instead of timing the `cblas` routine time the compiled code (i.e., comment out `cblas_daxpy` and uncomment the loop)
 
-#### Exercise: in the `bench` directory, read and run the `stride` program that measures the number of cycles/element for this loop
+**Exercise:** in the `bench` directory, read and run the `stride` program that measures the number of cycles/element for this loop
 ~~~
     for (int i=0; i<n; i+=stride) {
       y[i] += a*x[i];
