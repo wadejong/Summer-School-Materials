@@ -72,18 +72,19 @@ Lots of gory details (more than most of us need)
 
 On `sn-mem` compile (using `make sum`) and run in [`Examples/Vectorization`](https://github.com/wadejong/Summer-School-Materials/blob/master/Examples/Vectorization) the `sum.cc` program.
 ~~~
-   #include <iostream>
+#include <iostream>
 
-   int main() {
-       double a[100];
-       for (int i=0; i<100; i++) a[i] = i;
-       double sum = 0.0;
-       for (int i=0; i<100; i++) sum += a[i];
-       std::cout << sum << std::endl;
-       return 0;
-   }
+int main() {
+    const int N=100007;
+    double a[N];
+    for (int i=0; i<N; i++) a[i] = i;
+    double sum = 0.0;
+    for (int i=0; i<N; i++) sum += a[i];
+    std::cout << sum << std::endl;
+    return 0;
+}
 ~~~
-It adds up the integers 0-99 and prints out the sum.  
+It adds up the integers 0-99,999 and prints out the sum.  
 
 What are the compiler flags doing?
 * `-xHOST` --- optimize for the machine on which you are compiling.  Clearly not a good idea if you will run on a different architecture.
@@ -146,6 +147,16 @@ LOOP BEGIN at sum.cc(7,5)
 LOOP END
 ===========================================================================
 ~~~
+
+There's a more complicated version in [`sum_timed.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Examples/Vectorization/sum_timed.cc) that tries to measure the cost as the number of cycles per element.  
+
+#### Exercise: 
+1. Make and run the `sum_timed` program
+2. Make clean,  add `-no-vec` (to disable vectorization) to the CXXFLAGS, make, and re-run
+
+I got 
+* vectorized: 0.0625 --- 16 elements per cycle!  This is as fast as it gets (see discussion below about DAXPY)
+* un-vectorized: 1.625 --- 26x slower.  The `-no-vec` flag must have done some damage beyond just stopping vectorization.
 
 
 ## 5. Quick review of program execution
@@ -255,18 +266,19 @@ Since the assembly code can be *huge* it helps to use a bit of voodoo to insert 
 #include <iostream>
 
 int main() {
-    double a[100];
+    const int N=100007;
+    double a[N];
     __asm__("/*startloop*/");
-    for (int i=0; i<100; i++) a[i] = i;
+    for (int i=0; i<N; i++) a[i] = i;
     double sum = 0.0;
-    for (int i=0; i<100; i++) sum += a[i];
+    for (int i=0; i<N; i++) sum += a[i];
     __asm__("/*endloop*/");
     std::cout << sum << std::endl;
     return 0;
 }
 ~~~
-Copy (using your mouse or whatever) the `CXXFLAGS` from the `makefile` (just to save you typing it all) and add the `-S` and `-c` flags
-* `-S` generate the assembly language output in `*.s`
+We will add these flags to the compilation command
+* `-S` generate the assembly language output in `<filename>.s`
 * `-c` just compile, don't link
 
 So you will run
@@ -488,6 +500,10 @@ For small vector lengths we are dominated by overheads (loop, call, timing, ...)
     }
 ~~~
 that now has non-unit stride (i.e., non-contiguous memory access) and uses a large value of `n`.  Explain what you observe making reference to the size of a cache line (64 bytes) and the page size (4096 bytes).
+
+Here's my results in case you cannot get it running.
+
+![measured](https://github.com/wadejong/Summer-School-Materials/blob/master/VectorSIMD/stride.gif  "DAXPY cycles/element")
 
 
 ## 6.0 Non-trivial example --- vectorizing Metropolis Monte Carlo
