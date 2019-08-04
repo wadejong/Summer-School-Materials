@@ -1,7 +1,7 @@
 
 // Initial, simplest, completely sequential version of the algorithm that also has the smallest data footprint
 
-// Runs at ~71.1 cycles/sample on my laptop
+// Runs at ~71.1 cycles/sample on my laptop (~48.4 on sn-mem)
 
 // Why can't the compiler vectorize the two innermost for-loops?
 

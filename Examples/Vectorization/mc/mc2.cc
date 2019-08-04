@@ -2,13 +2,13 @@
 // drand() routine by pulling that out into a separate loop (at the
 // cost of using more memory).
 
-// Runs at ~44.0 cycle/sample on my laptop.
+// Runs at ~44.0 cycle/sample on my laptop (~33.9 on sn-mem)
 
 // Both key loops are now vectorized and it is now 1.6x faster than the original code on my laptop!
 
 // [Aside: with the Intel compiler the sampling loop does not
-// vectorize because of the reduction variable --- fix is to break it
-// into a separate loop, but this is slower with gcc9]
+// vectorize because of the reduction variable --- fix is either to break it
+// into a separate loop, but this is slower with gcc9, or to use a pramga to inform the compiler]
 
 #include <cmath> // for exp
 #include <iostream> // for cout, endl
@@ -61,6 +61,7 @@ int main() {
     uint64_t Xstart = cycle_count();
     for (int iter=0; iter<NITER; iter++) {
         vrand(2*N, r);
+#pragma simd reduction(+: sum)
         for (int i=0; i<N; i++) {
             kernel(x[i], p[i], r[2*i], r[2*i+1]);
             sum += x[i];

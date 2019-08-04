@@ -4,7 +4,9 @@
 // we are likely OK.  Given the large statistical error this is
 // likely every bit as accurate as the double precision version.
 
-// Now running in 3.6 cyles/sample --- 20 faster than the original!
+// Now running in 3.6 cyles/sample on my laptop (~2.02 on sn-mem) --- 20 faster than the original!
+
+// Why is it almost exactly 2x faster than the d.p. version?
 
 #include <cmath> // for exp
 #include <iostream> // for cout, endl
@@ -16,7 +18,7 @@
 
 const int NWARM = 10000;  // Number of iterations to equilbrate (aka warm up) population
 const int NITER = 100000; // Number of iterations to sample
-const int N = 1024;     // Population size
+const int N = 1024;     // Population size (tried making smaller to improve caching, but no significant effect?)
 
 float srand() {
     const float fac = 1.0/(RAND_MAX-1.0);
@@ -68,6 +70,7 @@ int main() {
         vrand(N, vxnew, -23.0, 0.0);
         vsExp(N, vxnew, vpnew);
         vrand(N, r, 0.0, 1.0);
+#pragma simd reduction(+: sum)
         for (int i=0; i<N; i++) {
             if (vpnew[i] > r[i]*p[i]) {
                 x[i] =-vxnew[i];
