@@ -55,11 +55,9 @@ Instead of computing over a semi-infinite domain we compute over *[0,23]* since 
 
 **Questions so far?**
 
-Now we jump to the source directory in [`Vectorization/mc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Examples/Vectorization/mc)
+Now we got to the source directory in [`Vectorization/mc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Examples/Vectorization/mc) and look in turn at the files `mc[0-5].cc`.
 
-#### Exercise:
-
-Vectorize the variational quantum Monte Carlo program in [`Examples/vmc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Examples/vmc).
+**Exercise (hard)**: Vectorize the variational quantum Monte Carlo program in [`Examples/vmc`](https://github.com/wadejong/Summer-School-Materials/blob/master/Examples/vmc).
 
 
 
