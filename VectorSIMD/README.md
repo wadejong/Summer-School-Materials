@@ -6,7 +6,11 @@
 1.  Quick start
 1.  Quick review of program execution
 1.  Quick review of pipelining
-1.  Quick review of SIMD with focus on x86
+1.  SIMD with focus on x86
+1.  Peak speed of Intel Skylake (`sn-mem`)
+1.  Bencharking DAXPY
+1.  Non-trivial example --- vectorizing Metropolis Monte Carlo
+1.  Exercises
 
 For this section we will be using the latest Intel Compiler so please execute this command in your shell on Seawulf to load the right modules
 ~~~
@@ -30,10 +34,9 @@ Key elements of modern CPU were architecture already covered in the introduction
 * memory
 * multiple cores
 
-and now we put your understanding into practice.
-
 There are several major techniques for vector/SIMD programming
 * Auto-vectorization --- focus of this class
+* OpenMP SIMD pragmas --- not covered in detail here, but highly relevant if you are also using OpenMP for threading.
 * Use of (vendor-provided) optimized libraries --- always a good idea (note Intel MKL is now free)
 * SIMD vector intrinsics (assembly-level programming with some help from C++) --- not covered here and not encouraged unless you are really after peak speed
 * Assembly programming --- no need these days
@@ -55,6 +58,9 @@ GNU compiler
 
 Clang/LLVM
 * [Auto-Vectorization in LLVM](https://llvm.org/docs/Vectorizers.html)
+
+OpenMP SIMD
+*  [OpenMP: Vectorization and `#pragma omp simd`](http://hpac.rwth-aachen.de/teaching/pp-16/material/08.OpenMP-4.pdf)
 
 More tutorials
 * [SIMD Programming](https://www.eidos.ic.i.u-tokyo.ac.jp/~tau/lecture/parallel_distributed/2018/slides/pdf/simd2.pdf)
@@ -91,7 +97,7 @@ What are the compiler flags doing?
 * `-O3` --- enable all level 3 optimizations (level 2 and above include vectorization)
 * `-ipo` --- perform inter-procedural analysis including enabling inlining routines between source files (not needed for this example)
 * `-no-prec-div -fp-model fast=2` --- relax the floating point accuracy requirements so that some optimizations become permissible (e.g., reordering operations can give different results due to different rounding errors)
-* `-qopt-zmm-usage=high` --- force use of the Skylake AVX512 instructions (see below) 
+* `-qopt-zmm-usage=high` --- force use of the Skylake AVX512 instructions (see below), here, primarily for pedagogical purposes
 * `-qopt-report=5 -qopt-report-phase=vec` --- print detailed info about vectorization optimizations into the file  `ipo_out.optrpt` (if the `-ipo` flag is not present the output goes into `<filename>.optrpt`)
 
 Let's look at that the optimization report.
@@ -158,7 +164,44 @@ I got
 * vectorized: 0.0625 --- 16 elements per cycle!  This is as fast as it gets on `sn-mem` (see discussion below about DAXPY)
 * un-vectorized: 1.625 --- 26x slower.  The `-no-vec` flag must have done some damage beyond just stopping vectorization.
 
-## 5. Quick review of program execution
+## 3.1 Requirements/recommendations for vectorizable loops
+
+1. Contiguous memory access (stride 1) --- non-unit stride access will be slow (since memory read/write are done on entire 64 byte cache lines, wasting bandwidth if you don't use the data).  Indexed read (gather) can inhibit vectorization and is in anycase slow unless most indices are nearly in order, and indexed write (scatter) will inhibit vectorization due to the write dependency.
+
+2. Aliasing can inibit vectorization --- i.e., the compiler cannot figure out if pointers/arrays refer to non-overlapping memory regions
+   * a modern compiler will sometimes generate both scalar and vector code and test at runtime for aliasing
+   * you can add the `restrict` keyword to points to assert there is no aliasing
+   * you can inser the 
+
+3. Data dependencies inhbit vectorization
+   * a variable/array element is written by one iteration and read by subsquent iteration, e.g.,
+~~~
+    for (i=1; i<n; i++) a[i] = a[i+K];
+~~~
+    If `K>0` then there is no read after write, however, if `K<0` the loop cannot be vectorized.
+   * a reduction operation --- should be vectorizable, however, all but the simplest loops seem to confuse some compilers so you may need to use a pragma to indicate the reduction variable.  E.g.,
+~~~
+#pragma simd reduction(+: sum)
+        for (int i=0; i<N; i++) {
+            if (vpnew[i] > r[i]*p[i]) {
+                x[i] =-vxnew[i];
+                p[i] = vpnew[i];
+            }
+            sum += x[i];
+        }
+~~~
+(for recent versions of GCC and Intel compilers prefer to use `#pragma omp simd reduction(":sum)` and enable OpenMP on the command line).
+
+If the compiler thinks there is a dependency, but you are confident there is not, you can insert a pragma before the loop.  E.g.,
+~~~
+#pragma ivdep
+    for (i=1; i<n; i++) a[i] = a[i+K];
+~~~
+(for GCC this is `#pragma GCC ivdep` and in OpenMP `#pragma omp simd`)
+
+
+
+## 4. Quick review of program execution
 
 There are multiple functional units, e.g.,
 * integer arithmetic and address computation
@@ -171,7 +214,7 @@ and in most processors it is usually possible in a single clock cycle to issue a
 
 Instructions are read from memory, decoded, and the execution engine (with dependency analysis and possibly speculative look ahead) tries to bundle as many instructions for each independent functional units as possible for issue each clock cycle.
 
-### 3. Quick review of pipelining
+## 5. Quick review of pipelining
 
 A complex instruction may take multiple cycles to complete --- the *latency* (*L*).
 
@@ -210,7 +253,7 @@ What about for 90% of peak speed?  <a href="https://www.codecogs.com/eqnedit.php
 What about for 99% of peak speed?  <a href="https://www.codecogs.com/eqnedit.php?latex=n_{99\%}&space;=&space;99&space;(L-1)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{99\%}&space;=&space;99&space;(L-1)" title="n_{99\%} = 99 (L-1)" /></a>
 
 
-### 4. Quick review of SIMD with focus on x86
+## 6. SIMD with focus on x86
 
 Instruction decode is expensive in chip area and power, and moving data from multiple registers to multiple functional units is similarly expensive.  By having a single instruction operate on multiple data (SIMD) we simplify both instruction decode and data motion.  
 
@@ -236,7 +279,7 @@ Modern AVX transformed the ease of obtaining high performance
 * many more operations including math functions (sin, cos, ...)
 * fully predicated (historically a key advantage of NVIDIA GPUs over x86 SIMD)
 
-### 4.1 SIMD on a long vector
+### 6.1 SIMD on a long vector
 
 If the SIMD register is just *W* words wide, how do we operate on a vector of arbitrary length *N*?  The loop is tiled by the compiler
 ~~~
@@ -252,7 +295,7 @@ becomes
 ~~~
 In practice, things can be much more complex due to handling address misalignment, unrolling, etc.
 
-### 4.2 Sum example revisited --- looking at the assembly language
+### 6.2 Sum example revisited --- looking at the assembly language
 
 Now we understand a bit more, let's look under the hood at what the compiler is doing at the sum example.  
 
@@ -338,7 +381,7 @@ Look in `sum.s` and search for `startloop`.
 
 Often hard to understand the assembly code since the compiler knows a lot more about the machine than you.  However, it knows a lot less about your intentions than you. Nevertheless, this is clearly vector code that is somehow mixing use of the 512-bit `zmm*` and 256-bit `ymm*` registers.
 
-### 4.2 Predication
+### 6.2 Predication
 
 There are lots of reasons for not wanting to operate (or write or read) on all elements in a SIMD register.  E.g., perhaps your vector is shorter than the register, or perhaps you have some test that must be true for data that you want to compute on (also termed computing under a mask).
 
@@ -369,7 +412,7 @@ Examples of AVX512 operations:
 Fortunately, we humans no longer need to write in assembly language.
 
 
-### 4.3 Memory alignment
+### 6.3 Memory alignment
 
 Historically, a load into vector register of width *W* bytes could only be performed from memory addresses that were appropriately aligned (usually on an address that was a multiple of *W*).  Subsequently, one could perform unaligned loads but only with a severe performance penalty.  Most recently, unaligned loads suffer a much lower peformance impact, but there can still benefit from aligning data.
 
@@ -383,20 +426,22 @@ Reference
 
 
 
-### 4.4 Pipelined SIMD
+### 6.4 Pipelined SIMD
 
 A factor of *L\*W* speedup compared to serial code.
 
 
 
-### 4.5 Exercises
+### 6.5 Exercises
 
 **Exercise:** what is the peak spead (operations/element/cycle) of a single, piplelined, SIMD functional unit with width *W=8* and latency *L=3*? 8.
 
 **Exercise:** how long must your vector be to obtain 90% of peak speed from a single, piplelined, SIMD functional unit with width *W=8* and latency *L=3*?  8*9*(3-1) = 144.   
 
-**Exercise:** what is the peak floating performance of a single core of sn-mem, and what do you have to do to get it?
 
+### 7. Peak speed of Intel Skylake (`sn-mem`)
+
+What is the peak floating performance of a single core of sn-mem, and what do you have to do to realize it?
 
 Login into the Seawulf node `sn-mem` --- if you are already logged into a login node just do `ssh sn-mem`, otherwise from your laptop do
 ~~~
@@ -451,7 +496,7 @@ and to get this performance you must issue 2 512-bit FMA instructions every sing
 **Exercise:** repeat the analysis for your laptop
 
 
-## 5.0 Benchmarking DAXPY
+## 8.0 Benchmarking DAXPY
 
 Measure the cycles/iteration of this loop as a function of `n`
 ~~~
@@ -468,13 +513,13 @@ Before you run test --- what do you expect to see?
 
 On `sn-mem` compile and run in [`Examples/Vectorization/bench`](https://github.com/wadejong/Summer-School-Materials/blob/master/Examples/Vectorization/bench)
 
-### 5.1 Observations
+### 8.1 Observations
 
 In the figure are cycles/element for DAXY as a function of N (the x-axis being on a log scale)
 
 ![measured](https://github.com/wadejong/Summer-School-Materials/blob/master/VectorSIMD/plot.gif  "DAXPY cycles/element")
 
-### 5.2 Analysis
+### 8.2 Analysis
 
 Theoretical peak speed on Skylake --- in one cycle can issue 
 * FMA AVX512 SIMD
@@ -507,7 +552,25 @@ Here's my results in case you cannot get it running.
 ![measured](https://github.com/wadejong/Summer-School-Materials/blob/master/VectorSIMD/stride.gif  "DAXPY cycles/element")
 
 
-## 6.0 Non-trivial example --- vectorizing Metropolis Monte Carlo
+## 9.0 Non-trivial example --- vectorizing Metropolis Monte Carlo
 
 Look [here](https://github.com/wadejong/Summer-School-Materials/blob/master/Examples/Vectorization/mc)
 
+## 10.0 Exercises
+
+**Exercise:** Read the Intel vectorization documentation in the links section
+
+**Exercise:** Skim (!) the Intel 64 and IA-32 Architectures Optimization Reference Manual in the links section, just to get a flavor.
+
+**Exercise:** Make sure you understand the Monte Carlo example
+
+**Exercise:** Explain the performance obtained from the matrix multiplication example.  For instance,
+~~~
+    [rharrison@sn-mem mxm]$ ./mxm
+    A(m,k)*B(k,n) --> C(m,n)
+    Input m n k: 1024 1024 1024
+    basic FLOPS/cycle 5
+    daxpy FLOPS/cycle 2.2
+     ddot FLOPS/cycle 2.7
+      mkl FLOPS/cycle 27
+~~~

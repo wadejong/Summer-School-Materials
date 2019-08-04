@@ -3,7 +3,7 @@ TARGETS = mxm
 
 CXX = icpc
 
-CXXFLAGS = -xHOST -O3 -ipo -no-prec-div -fp-model fast=2 -qopt-report -mkl=sequential 
+CXXFLAGS = -xHOST -O3 -ipo -no-prec-div -fp-model fast=2 -mkl=sequential -qopt-zmm-usage=high -qopt-report=5 -qopt-report-phase=vec
 
 all:	$(TARGETS)
 
