@@ -1,8 +1,6 @@
 
 # Introduction to message passing with MPI
 
-## 1. Outline
-
 1.  Big picture
 1.  Useful links
 1.  Hello world in *just* 20 minutes
@@ -16,7 +14,7 @@
 1.  Additional material
 1.  Exercises
   
-## 2. Big picture
+## 1. Big picture
 
 Motivations:
 * Performance
@@ -57,7 +55,7 @@ References:
 * [SLURM reference](https://slurm.schedmd.com/documentation.html)
 
 
-## 3. Useful links
+## 2. Useful links
 
 * [MPI interface](https://www.mpich.org/static/docs/v3.2/) --- from the MPICH team
 
