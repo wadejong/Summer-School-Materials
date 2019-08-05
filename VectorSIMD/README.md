@@ -100,7 +100,7 @@ What are the compiler flags doing?
 * `-qopt-zmm-usage=high` --- force use of the Skylake AVX512 instructions (see below), here, primarily for pedagogical purposes
 * `-qopt-report=5 -qopt-report-phase=vec` --- print detailed info about vectorization optimizations into the file  `ipo_out.optrpt` (if the `-ipo` flag is not present the output goes into `<filename>.optrpt`)
 
-Let's look at that the optimization report.
+Let's look at the optimization report.
 ~~~
 Intel(R) Advisor can now assist with vectorization and show optimization
   report messages with your source code.
