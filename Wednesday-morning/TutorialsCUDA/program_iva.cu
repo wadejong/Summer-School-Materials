@@ -243,7 +243,7 @@ int main()
   gettimeofday(&timings[0], NULL);
   
   // Create a small array of particles and populate it
-  const int pdim = 60;
+  const int pdim = 64;
   particleXcoord = CreateGpuFloat(pdim * pdim * pdim, 1);
   particleYcoord = CreateGpuFloat(pdim * pdim * pdim, 1);
   particleZcoord = CreateGpuFloat(pdim * pdim * pdim, 1);
@@ -297,7 +297,8 @@ int main()
   float* yfrc = particleYfrc.HostData;
   float* zfrc = particleZfrc.HostData;
   for (i = 0; i < np; i++) {
-    for (j = 0; j < i; j++) {
+    int jstep = ((i % (np/32)) == 0) ? 1 : np/32;
+    for (j = 0; j < i; j += jstep) {
       float dx = xcrd[j] - xcrd[i];
       float dy = ycrd[j] - ycrd[i];
       float dz = zcrd[j] - zcrd[i];
@@ -319,7 +320,7 @@ int main()
     }
   }
   printf("\n");
-  printf("CPU calculated energy = %9.4lf\n", qqnrg);
+  printf("CPU calculated energy (this will be wrong) = %9.4lf\n", qqnrg);
   for (i = 0; i < np; i += np/32) {
     printf("CPU force [ %7d ] = %9.4f %9.4f %9.4f\n", i, xfrc[i], yfrc[i],
 	   zfrc[i]);

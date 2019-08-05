@@ -5,6 +5,6 @@ for PROG in a b c d e ; do
   nvcc -o program_ii${PROG} program_ii${PROG}.cu
 done
 
-for PROG in iif iiia iiia_solved iva_solved ; do
+for PROG in iif iiia iiia_solved iva iva_solved ; do
   nvcc -o program_${PROG}  program_${PROG}.cu
 done

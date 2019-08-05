@@ -391,7 +391,7 @@ int main()
   gettimeofday(&timings[0], NULL);
   
   // Create a small array of particles and populate it
-  const int pdim = 60;
+  const int pdim = 64;
   particleXcoord = CreateGpuFloat(pdim * pdim * pdim, 1);
   particleYcoord = CreateGpuFloat(pdim * pdim * pdim, 1);
   particleZcoord = CreateGpuFloat(pdim * pdim * pdim, 1);
