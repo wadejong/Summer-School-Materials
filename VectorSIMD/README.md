@@ -538,6 +538,10 @@ For small vector lengths we are dominated by overheads (loop, call, timing, ...)
 
 [Aside: nice detailed analysis of Haswell cache access in the comments [here](https://software.intel.com/en-us/forums/intel-moderncode-for-parallel-architectures/topic/608964).]
 
+Here is a plot of the above integrated as a roofline model with the experimental data (converted to being the rate in elements/cycle)
+
+![measured](https://github.com/wadejong/Summer-School-Materials/blob/master/VectorSIMD/roof.gif  "DAXPY elements/cycle")
+
 **Exercise:** instead of timing the `cblas` routine time the compiled code (i.e., comment out `cblas_daxpy` and uncomment the loop)
 
 **Exercise:** in the `bench` directory, read and run the `stride` program that measures the number of cycles/element for this loop
