@@ -9,4 +9,5 @@ dyld: Library not loaded: @rpath/libmkl_intel_lp64.dylib
 ``` 
     you may need to prepend `source /opt/intel/mkl/bin/mklvars.sh intel64; ` to the name of the executable in Python scripts.
 - If you do not have an Intel compiler ...
+  - to use GNU stack on Seawolf: `make CXX=g++ CXXFLAGS='-O3 -march=native -std=c++11' CPPFLAGS=-I/gpfs/software/OpenBLAS-0.2.20_serial/include LDFLAGS='-L/gpfs/software/OpenBLAS-0.2.20_serial/lib -lopenblas'` and do `export LD_LIBRARY_PATH=/gpfs/software/OpenBLAS-0.2.20_serial/lib:$LD_LIBRARY_PATH` before running
 
