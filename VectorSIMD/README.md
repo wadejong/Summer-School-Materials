@@ -379,7 +379,7 @@ Look in `sum.s` and search for `startloop`.
 ...
 ~~~
 
-It is often hard to understand the assembly code since the compiler knows a lot more about the machine than you.  However, it knows a lot less about your intentions than you and it might still be suboptimal. Nevertheless, this is clearly vector code that is somehow mixing use of the 512-bit `zmm*` and 256-bit `ymm*` registers.
+It is often hard to understand the assembly code since the compiler knows a lot more about the machine than you.  However, it knows a lot less about your intentions than you and so the code might still be suboptimal. Nevertheless, this is clearly vector code that is somehow mixing use of the 512-bit `zmm*` and 256-bit `ymm*` registers.
 
 ### 6.2 Predication
 
