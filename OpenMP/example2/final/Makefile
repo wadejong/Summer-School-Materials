@@ -1,5 +1,5 @@
-CXX = icpc
-CXXFLAGS = -xHOST -O3 -ipo -no-prec-div -fp-model fast=2 -qopenmp
+CXX = g++
+CXXFLAGS = -O3 -fopenmp
 
 TARGETS = example2
 

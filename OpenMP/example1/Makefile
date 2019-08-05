@@ -1,5 +1,5 @@
-CXX = mpiicpc
-CXXFLAGS = -xHOST -O3 -ipo -no-prec-div -fp-model fast=2
+CXX = g++
+CXXFLAGS = -O3 -fopenmp
 
 TARGETS = example1
 
