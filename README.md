@@ -1,6 +1,8 @@
 # Summer-School-Materials
 
-https://sites.google.com/lbl.gov/parcompmolsci/home
+**Wifi connection:** eduroam is available, otherwise connect to SSID WolfieNet-Guest
+
+**Schedule and home page:**  https://sites.google.com/lbl.gov/parcompmolsci/home
 
 Clone this repo using:
 ~~~
