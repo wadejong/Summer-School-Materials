@@ -26,7 +26,7 @@ Go ahead and build the code.
 You could run the code just by typing `example1` into the command line, but there is also a simple script that does the same thing.
 Run the script now.
 
-**$ qsub run.sh**
+**$ sbatch run.sh**
 
 > Hello World!
 
@@ -75,7 +75,7 @@ export OMP_NUM_THREADS=4
 
 Now let's run the code:
 
-**$ qsub run.sh**
+**$ sbatch run.sh**
 
 > Hello World!\
 Hello World!\
@@ -107,7 +107,7 @@ int main()
 Compile and run the code:
 
 **$ make\
-$ qsub run.sh**
+$ sbatch run.sh**
 
 >Hello World! (2)\
 Hello World! (3)\
@@ -177,7 +177,7 @@ We will now work on Example 2.
 In this directory is a code that does some simple math on some arrays, and then prints the average of the result:
 
 **$ make\
-$ qsub run.sh**
+$ sbatch run.sh**
 
 >Average: 500000001.500000
 
@@ -349,7 +349,7 @@ Now we will look at Example 3.
 Compiling and running this code should produce something like the following:
 
 **$ make\
-$ qsub run.sh**
+$ sbatch run.sh**
 
 >Iteration: 999      Energy: 92079.129718      PE: 16253.127101\
 \
@@ -497,7 +497,7 @@ Now we will work on a somewhat more realistic example of an MD code.
 
 **cd ../example4\
 make\
-qsub run.sh**
+sbatch run.sh**
 
 >Time step 0.03\
 optim: 1.84389e+17 0.1\
