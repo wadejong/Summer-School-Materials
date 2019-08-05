@@ -7,14 +7,7 @@ Clone this repo using:
     git clone https://github.com/wadejong/Summer-School-Materials.git
 ~~~
 
-On Seawulf, software is managed using modules and we will be using several different compilers and tools.  Each time you login please source the appropriate module file (look inside if you want see what is going on)
-~~~
-    source /gpfs/projects/molssi/modules-gnu
-    source /gpfs/projects/molssi/modules-intel
-    source /gpfs/projects/molssi/modules-cuda
-~~~
-
-More info on SeaWulf can be be found here
+We will be using the Seawulf cluster at IACS/SBU:
 
 * [Seawulf HPC FAQ etc.](https://it.stonybrook.edu/services/high-performance-computing)
 
@@ -33,3 +26,11 @@ but this can be rather busy and is not a very recent CPU.  So, we will also be u
     ssh <username>@sn-mem.seawulf.stonybrook.edu
 ~~~
 All other Seawulf nodes are only accessible after you have logged into either the `login` or `sn-mem` nodes.
+
+On Seawulf, software is managed using modules and we will be using several different compilers and tools.  Each time you login please source the appropriate module file (look inside if you want see what is going on) --- pick one of the following:
+~~~
+    source /gpfs/projects/molssi/modules-gnu
+    source /gpfs/projects/molssi/modules-intel
+    source /gpfs/projects/molssi/modules-cuda
+~~~
+
