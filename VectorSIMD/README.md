@@ -173,14 +173,14 @@ I got
 2. Aliasing can inibit vectorization --- i.e., the compiler cannot figure out if pointers/arrays refer to non-overlapping memory regions
    * a modern compiler will sometimes generate both scalar and vector code and test at runtime for aliasing
    * you can add the `restrict` keyword to points to assert there is no aliasing
-   * you can inser the 
+   * also see `pragma ivdep` below
 
 3. Data dependencies inhbit vectorization
    * a variable/array element is written by one iteration and read by subsquent iteration, e.g.,
 ~~~
     for (i=1; i<n; i++) a[i] = a[i+K];
 ~~~
-    If `K>0` then there is no read after write, however, if `K<0` the loop cannot be vectorized.
+If `K>0` then there is no read after write, however, if `K<0` the loop cannot be vectorized.
    * a reduction operation --- should be vectorizable, however, all but the simplest loops seem to confuse some compilers so you may need to use a pragma to indicate the reduction variable.  E.g.,
 ~~~
 #pragma simd reduction(+: sum)
@@ -199,8 +199,7 @@ If the compiler thinks there is a dependency, but you are confident there is not
 #pragma ivdep
     for (i=1; i<n; i++) a[i] = a[i+K];
 ~~~
-(for GCC this is `#pragma GCC ivdep` and in OpenMP `#pragma omp simd`)
-
+(for GCC this is `#pragma GCC ivdep` and in OpenMP `#pragma omp simd`). *Note:* if there really is a dependency, then you just introduced a bug!
 
 
 ## 4. Quick review of program execution
