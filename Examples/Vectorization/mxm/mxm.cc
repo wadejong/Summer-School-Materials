@@ -100,7 +100,7 @@ int main() {
 
     int nrepeat = std::max(3, 1000000/(2*n*m*k));
 
-    // The "#pragma noline" is used below so that the vectorization
+    // The "#pragma noinline" is used below so that the vectorization
     // information comes with line numbers associated with the
     // routines above and also to stop the repeat loop (for timing
     // only) being permuted with the algorithm loops
@@ -129,7 +129,6 @@ int main() {
     for (int i=0; i<nrepeat; i++) mxm_daxpy(m, n, k, a, b, c);
     uint64_t used_daxpy = cycle_count() - start;
     if (!ok(m, n, c, d)) throw "daxpy failed";
-
 
     // Mxm requires 2*m*n*k floating point operations
     double rate_basic = (2.0*n*m*k*nrepeat)/used_basic;
