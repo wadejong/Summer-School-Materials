@@ -3,6 +3,7 @@
 #include <cmath>
 #include <mkl_vsl.h> // for the random number generators
 #include <mkl_vml.h> // for the vectorized exponential
+#include <vector>
 
 using namespace std;
 
@@ -86,11 +87,11 @@ void accumulate_stats(double x1, double y1, double z1, double x2, double y2, dou
 }
 
 int main() {
-    double x1[Npoint], y1[Npoint], z1[Npoint];
-    double x2[Npoint], y2[Npoint], z2[Npoint];
-    double PSI[Npoint]; // Holds wave function values
+  vector<double> x1(Npoint), y1(Npoint), z1(Npoint);
+  vector<double> x2(Npoint), y2(Npoint), z2(Npoint);
+  vector<double> PSI(Npoint); // Holds wave function values
 
-    double ran[Npoint*7];
+  double ran[Npoint*7];
     double* ran1 = ran;
     double* ran2 = ran + Npoint;
     double* ran3 = ran + Npoint*2;

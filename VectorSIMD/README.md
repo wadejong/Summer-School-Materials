@@ -166,16 +166,18 @@ I got
 
 ## 3.1 Requirements/recommendations for vectorizable loops
 
-1. Contiguous memory access (stride 1) --- non-unit stride access will be slow (since memory read/write are done on entire 64 byte cache lines, wasting bandwidth if you don't use the data).  Indexed read (gather) can inhibit vectorization and is in anycase slow unless most indices are nearly in order, and indexed write (scatter) will inhibit vectorization due to the write dependency.  
+1. The number of iterations must be computable before the loop starts --- i.e., you cannot modify the iteration count within the loop and you cannot exit the loop prematurely.
+
+2. Contiguous memory access (stride 1) --- non-unit stride access will be slow (since memory read/write are done on entire 64 byte cache lines, wasting bandwidth if you don't use the data).  Indexed read (gather) can inhibit vectorization and is in anycase slow unless most indices are nearly in order, and indexed write (scatter) will inhibit vectorization due to the write dependency.  
    * If there is a lot of computation, you can gather the data into a contiguous array in one loop, compute in a separate loop, and scatter the result in a final loop.
    * The Intel MKL Vector Math Library [Pack/Unpack Functions](https://software.intel.com/en-us/mkl-developer-reference-c-vm-pack-unpack-functions) can accelerate converting strided/indexed/masked vectors to/from contiguous arrays.
 
-2. Aliasing can inibit vectorization --- i.e., the compiler cannot figure out if pointers/arrays refer to non-overlapping memory regions
+3. Aliasing can inibit vectorization --- i.e., the compiler cannot figure out if pointers/arrays refer to non-overlapping memory regions
    * a modern compiler will sometimes generate both scalar and vector code and test at runtime for aliasing
    * you can add the `restrict` keyword to points to assert there is no aliasing
    * also see `pragma ivdep` below
 
-3. Data dependencies inhbit vectorization
+4. Data dependencies inhbit vectorization
    * a variable/array element is written by one iteration and read by subsquent iteration, e.g.,
 ~~~
     for (i=1; i<n; i++) a[i] = a[i+K];
