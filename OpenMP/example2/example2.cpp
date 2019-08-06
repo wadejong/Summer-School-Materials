@@ -8,8 +8,8 @@ int main()
 {
 
   //declare two arrays
-  int* a = new int[N];
-  int* b = new int[N];
+  double* a = new double[N];
+  double* b = new double[N];
 
   //initialize a
   for (int i=0; i<N; i++) {
@@ -29,9 +29,8 @@ int main()
   //average the result
   double average = 0.0;
   for (int i=0; i<N; i++) {
-    average += a[i];
+    average += a[i]/double(N);
   }
-  average = average/double(N);
 
   //print the result
   printf("Average: %f\n",average);

@@ -266,9 +266,8 @@ Now we will parallelize the loop that averages the result.
 ``` cpp
 #pragma omp parallel for
   for (int i=0; i<N; i++) {
-    average += a[i];
+    average += a[i]/double(N);
   }
-  average = average/double(N);
 ```
 
 >Initialize a time: 1.397873\

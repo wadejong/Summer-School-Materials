@@ -11,8 +11,8 @@ int main()
   double start_loop;
 
   //declare two arrays
-  int* a = new int[N];
-  int* b = new int[N];
+  double* a = new double[N];
+  double* b = new double[N];
 
   //initialize a
   start_loop = omp_get_wtime();
@@ -43,9 +43,8 @@ int main()
   double average = 0.0;
 #pragma omp parallel for reduction(+:average)
   for (int i=0; i<N; i++) {
-    average += a[i];
+    average += a[i]/double(N);
   }
-  average = average/double(N);
 
   printf("Average result time: %f\n",omp_get_wtime()-start_loop);
   printf("\n");
