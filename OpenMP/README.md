@@ -350,7 +350,7 @@ Compiling and running this code should produce something like the following:
 **$ make\
 $ sbatch run.sh**
 
->Iteration: 999      Energy: 92079.129718      PE: 16253.127101\
+>Iteration: 999      Energy: 181016.695100      PE: 35830.969364\
 \
 Timings:\
    Force Zero:      0.000707\
@@ -393,19 +393,19 @@ One approach to speeding this code up would be to add OpenMP parallelization to 
   }
 ```
 
->Iteration: 999      Energy: 286004.735108      PE: 18173.082058\
+>Iteration: 999      Energy: 336789.214162      PE: 41980.836658\
 \
 Timings:\
-   Force Zero:      0.001293\
-   Force Calc:      14.219656\
-   Velocity Update: 0.014499\
-   Coords Update:   0.005649\
-   Total:           14.246469
+   Force Zero:      0.001804\
+   Force Calc:      26.096548\
+   Velocity Update: 0.005537\
+   Coords Update:   0.007117\
+   Total:           26.113039
 
 Unfortunately, this change causes the simulation to no longer produce the same results!
 
 To understand why the results are different, look closely at how this loop updates the forces.
-In the innermost loop is the line `forces[i][0] -= fx;`, which tells the computer "Copy the value of `forces[j][0]` from memory and store it in cache, then subtract `fx` from it, then replace the value of `forces[i][0]` in memory with the result.
+In the innermost loop is the line `forces[i][0] -= fx;`, which tells the computer "Copy the value of `forces[i][0]` from memory and store it in cache, then subtract `fx` from it, then replace the value of `forces[i][0]` in memory with the result."
 When we run with multiple threads, different threads may be attempting to update 'forces[i][0]' at the same time.
 If one thread copies the value of `forces[i][0]` into cache, then another thread updates it while the first thread is doing the subtration operation, the outcome will be that the first thread overwrites the update.
 This scenario is known as a `race condition`, and happens any time two threads try to edit the same data at the same time.
@@ -438,24 +438,24 @@ The modified code looks like:
   *potential = v;
 ```
 
-The main differences here are: (1) we changed the starting value of `j` from `i+1` to `0`, (2) we commented out the updates to `forces[i]`, (3) we multiple all contributions to `v` by `0.5` to avoid a double-counting error, and (4) we add an `if` check to avoid the `i == j` case.
+The main differences here are: (1) we changed the starting value of `j` from `i+1` to `0`, (2) we commented out the updates to `forces[i]`, (3) we multiply all contributions to `v` by `0.5` to avoid a double-counting error, and (4) we add an `if` check to avoid the `i == j` case.
 This code produces the correct result while also being substantially faster.
-   
->Iteration: 999      Energy: 92079.129718      PE: 16253.127101\
+
+> Iteration: 999      Energy: 181016.695100      PE: 35830.969364\
 \
 Timings:\
-   Force Zero:      0.000792\
-   Force Calc:      7.954821\
-   Velocity Update: 0.003412\
-   Coords Update:   0.005082\
-   Total:           7.969381\
+   Force Zero:      0.001225\
+   Force Calc:      18.601166\
+   Velocity Update: 0.005785\
+   Coords Update:   0.006936\
+   Total:           18.617056
 
 That having been said, we can probably do somewhat better.
 Every time the code enters an OpenMP-threaded region, the master thread must perform a `fork` (and later a `join`).
 Because of this, there is an overhead cost every time the code encounters an OpenMP-parallelized region; the exact amount of overhead can vary, but it is usually on the order of 1 microsecond.
 Think for a moment about how much time the code spends each time it enters our OpenMP region.
-The total amount of time our code spends calculating the forces is 8.0 seconds, and the code enters the OpenMP region a number of times equal to the number of atoms times the number of iterations.
-This works out to approximately 5 microseconds spent inside the OpenMP region each time it is called.
+The total amount of time our code spends calculating the forces is 18.6 seconds, and the code enters the OpenMP region a number of times equal to the number of atoms times the number of iterations.
+This works out to less than one microsecond spent inside the OpenMP region each time it is called.
 That isn't ideal - it is likely that a decent amount of that time is just `fork`/`join` overhead.
 
 We can improve things by moving the parallelization to the outer loop over `i`.
@@ -464,6 +464,7 @@ We can improve things by moving the parallelization to the outer loop over `i`.
 #pragma omp parallel for reduction(+:v)
   for (int i=0; i < natoms; i++) {
     for (int j=0; j < natoms; j++) {
+      if ( i != j ) {
         double dx = coords[j][0] - coords[i][0];
         double dy = coords[j][1] - coords[i][1];
         double dr2 = dx*dx + dy*dy;
@@ -475,18 +476,19 @@ We can improve things by moving the parallelization to the outer loop over `i`.
 	//forces[j][0] += fx;
 	//forces[j][1] += fy;
         v += 0.5/dr;
+      }
     }
   }
 ```
 
->Iteration: 999      Energy: 92079.129718      PE: 16253.127101\
+Iteration: 999      Energy: 181016.695100      PE: 35830.969364\
 \
 Timings:\
-   Force Zero:      0.000737\
-   Force Calc:      4.770037\
-   Velocity Update: 0.002868\
-   Coords Update:   0.005819\
-   Total:           4.784812\
+   Force Zero:      0.001421\
+   Force Calc:      8.838064\
+   Velocity Update: 0.004867\
+   Coords Update:   0.004928\
+   Total:           8.851212
 
 That definitely helped - apparently the code was spending nearly half the time doing OpenMP overhead work.
 
@@ -514,17 +516,17 @@ optim: -20445.1 0.1\
 \
     time         ke            pe             e            T          P\
   -------    -----------   ------------  ------------    ------    ------\
-     3.00     2937.72894   -18197.02586  -15259.29692    0.371   0.04086690 *\
-     6.00     3426.85950   -18452.47277  -15025.61327    0.408   0.04039200 *\
-     9.00     3603.35315   -18693.26130  -15089.90815    0.441   0.03943282 *\
-    12.00     3615.37003   -19040.76407  -15425.39404    0.436   0.03848593  \
-    15.00     3686.47202   -19111.90579  -15425.43377    0.453   0.03809054  \
-    18.00     3702.65533   -19128.06154  -15425.40621    0.465   0.03778621  \
-    21.00     3812.43640   -19237.88713  -15425.45072    0.472   0.03758076  \
-    24.00     3849.80094   -19275.24791  -15425.44697    0.480   0.03741216  \
-    27.00     3962.65623   -19388.13553  -15425.47930    0.492   0.03713681  \
-    30.00     3973.40391   -19398.90927  -15425.50536    0.495   0.03703538  \
-times:  force=14.85s  neigh=17.29s  total=32.24s
+     3.00     2937.80763   -18197.09931  -15259.29169    0.371   0.04086683 *\
+     6.00     3426.75685   -18452.39153  -15025.63468    0.408   0.04039181 *\
+     9.00     3603.41768   -18693.40922  -15089.99153    0.441   0.03943285 *\
+    12.00     3615.18078   -19040.58035  -15425.39957    0.436   0.03848593\
+    15.00     3686.47359   -19111.91277  -15425.43918    0.453   0.03809104\
+    18.00     3703.32287   -19128.73441  -15425.41154    0.465   0.03778591\
+    21.00     3811.41715   -19236.87323  -15425.45608    0.472   0.03758088\
+    24.00     3850.04218   -19275.49461  -15425.45244    0.480   0.03741260\
+    27.00     3961.30432   -19386.78980  -15425.48548    0.492   0.03713656\
+    30.00     3973.30852   -19398.81988  -15425.51136    0.495   0.03703601\
+times:  force=11.53s  neigh=16.68s  total=28.32s
 
 The code primarily consists of three sections: (1) The `neighbor_list` function, which generates a list of atom pairs that are close enough to be considered interacting, (2) a `forces` function, which calculates all contributions to the forces from the pairs in the neighbor list, and (3) the `md` function, which runs the calculation by calling `neighbor_list` and `forces` and then updating the atomic coordinates each timestep.
 
@@ -663,7 +665,7 @@ Then, `just before` the end of the OpenMP block, write the following:
 
 Running on four threads, this gives improved performance for the forces:
 
->    30.00     3973.40314   -19398.90851  -15425.50536    0.495   0.03703538  \
+>    30.00     3973.30852   -19398.81988  -15425.51136    0.495   0.03703601 \
 times:  force=7.03s  neigh=18.99s  total=26.23s\
 
 Now let's work on the `neighbor_list` function.
