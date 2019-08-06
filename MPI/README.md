@@ -97,7 +97,7 @@ Start from sequential version [`exercises/hello.cc`](https://github.com/wadejong
         return 0;
     }
 ```
-Build the sequential version with `make hello` or `icpc -o hello hello.cc`.
+Build the sequential version with `make hello` or `icpc -o hello hello.cc` (Intel) or `g++ -o hello hello.cc` (GNU).
 
 ### Required elements of all MPI programs
 
@@ -149,7 +149,7 @@ The new version ([`exercises/mpihello.cc`](https://github.com/wadejong/Summer-Sc
 Build your parallel version with `make mpihello` or `mpiicpc -o mpihello mpihello.cc`
 
 * MPI provides wrappers for compiling and linking programs because there's a lot of machine specific stuff that must be done.
-* For the summer school we are using the Intel C++ compiler and MPI library so we use the command `mpiicpc` (`mpiifort` for the Intel FORTRAN, `mpiicc` for Intel C) but more commonly you might be using the GNU stack (`mpicxx`, `mpicc`, `mpifort`, etc.) (see [here](https://software.intel.com/en-us/mpi-developer-reference-linux-compiler-commands) for more details).
+* For the summer school we are using the GNU stack (`mpicxx`, `mpicc`, `mpifort`, etc.) (see [here](https://software.intel.com/en-us/mpi-developer-reference-linux-compiler-commands) for more details) but if using the Intel C++ compiler and MPI library use the command `mpiicpc` (`mpiifort` for the Intel FORTRAN, `mpiicc` for Intel C). 
 
 ### Running MPI programs
 
