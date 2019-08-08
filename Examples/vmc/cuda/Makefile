@@ -1,4 +1,4 @@
-NVCC = nvcc --ptxas-options="-v" 
+NVCC = nvcc --ptxas-options="-v"  -O3
 CXX = g++
 TARGETS = vmc
 
