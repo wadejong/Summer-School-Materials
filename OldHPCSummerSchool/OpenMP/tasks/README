@@ -9,3 +9,8 @@ version
 recursive.cc ... adatptive numerical quadrature ... OpenMP task
 version
 
+More detailed and up to date tutorials
+*  http://www-5.unipv.it/mferretti/cdol/aca/Charts/Parallel%20programming%20models/OpenMP/esercizi-openmp-2.pdf
+*  https://openmpcon.org/wp-content/uploads/openmpcon2015-michael-klemm-tasking.pdf
+*  https://openmpcon.org/wp-content/uploads/openmpcon2017/Tutorial2-Advanced_OpenMP.pdf
+*  http://icl.cs.utk.edu/classes/cosc462/2017/pdf/W43%20-%20OpenMP%20Tasking.pdf
