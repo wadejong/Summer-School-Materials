@@ -16,9 +16,9 @@ const int Nsample = 100*4*56;    // No. of blocks to sample
 * NVIDIA timings on P100
 * Double precision on all platforms (empirically float gives ~2x speedup on both machines)
 
-|P100|Vec|Seq|
-|---|---|---|
-|13.3s|710s|7100s est.|
+|P100|Vec|Seq|OMP+vec|
+|---|---|---|---|
+|13.3s|710s|7100s est.|10s est.|
 
 So, comparing the performance of the different software implementations
 on the different hardware, the entire P100 is about 530x faster than
