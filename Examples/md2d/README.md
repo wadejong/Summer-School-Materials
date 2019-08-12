@@ -1,1 +1,2 @@
-A simple molecular dynamics program for a 2D gas/liquid/solid of Lennard-Jones particles using a neighbor list and distance cutoff to accelerate the computation.  Effective paralleliziation must distribute both the neighbor list construction and force computation since they take about the same amount of time.
+A simple molecular dynamics program for a 2D gas/liquid/solid of Lennard-Jones particles using a neighbor list and distance cutoff to accelerate the computation.  Effective paralleliziation must distribute both the neighbor list construction and force computation since they take about the same amount of time (indeed, since the neighbor list is an inefficient quadratcally scaling algorith it can easily dominate)
+
