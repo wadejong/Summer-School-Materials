@@ -63,6 +63,7 @@ OpenMP SIMD
 *  [OpenMP: Vectorization and `#pragma omp simd`](http://hpac.rwth-aachen.de/teaching/pp-16/material/08.OpenMP-4.pdf)
 
 More tutorials
+* [Topics in Loop Vectorization](http://www.cs.utexas.edu/~pingali/CS377P/2019sp/lectures/vectorization-voss.pdf) --- very detailed and accessible
 * [SIMD Programming](https://www.eidos.ic.i.u-tokyo.ac.jp/~tau/lecture/parallel_distributed/2018/slides/pdf/simd2.pdf)
 * [SIMD Peak FLOPS](https://www.eidos.ic.i.u-tokyo.ac.jp/~tau/lecture/parallel_distributed/2014/slides/simd.pdf)
 * [Vectorization and Parallelization of Loops in C/C++ Code](https://pdfs.semanticscholar.org/852c/0115d6011b6cd2746d18f56d64a53e65af5d.pdf)
