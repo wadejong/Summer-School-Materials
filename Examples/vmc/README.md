@@ -33,3 +33,8 @@ The sub-directories contain the following:
 * omp --- the open mp version
 
 * mpi --- the mpi version
+
+* vec --- the vectorized version
+
+* cuda --- the CUDA version for NVIDIA GPUs
+

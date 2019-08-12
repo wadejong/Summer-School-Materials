@@ -1,4 +1,4 @@
-SUBDIRS = mpi omp seq
+SUBDIRS = mpi omp seq omp+vec
 
 all:
 	for dir in $(SUBDIRS) ; do $(MAKE) -C $$dir ; done
