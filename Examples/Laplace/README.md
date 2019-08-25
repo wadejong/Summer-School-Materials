@@ -16,15 +16,19 @@ subject to the boundary conditions
 
 <a href="https://www.codecogs.com/eqnedit.php?latex=u(x,y)=f(x,y)\&space;\mbox{for}\&space;(x,y)\in\partial\Omega" target="_blank"><img src="https://latex.codecogs.com/gif.latex?u(x,y)=f(x,y)\&space;\mbox{for}\&space;(x,y)\in\partial\Omega" title="u(x,y)=f(x,y)\ \mbox{for}\ (x,y)\in\partial\Omega" /></a> (i.e., on the edges of the square). 
 
-We approximate the Laplacian using a standard stencil $\nabla^2 u(x,y) \approx \left( u(x-h,y) + u(x+h,y) + u(x,y-h) + u(x,y+h) - 4 u(x,y) \right) / h^2.  Setting this to zero, discretizing (evaluating on a grid) the solution so that $u_{ij} = u(i h-\pi, j h-\pi)$ (with $h=2\pi/(N-1)$ for N grid points including those on the boundary), and interpreting the equation as a fixed point iteration yields (with $n$ as the iteration index)
+We approximate the Laplacian using a standard stencil 
 
-$u^{n+1}_{i,j) = \left(u^n(i-1,j) + u^n(i+1,j) + u^n(i,j-1) + u^n(i,j+1) \right)/4$
+<a href="https://www.codecogs.com/eqnedit.php?latex=\nabla^2&space;u(x,y)&space;\approx&space;\left(&space;u(x-h,y)&space;&plus;&space;u(x&plus;h,y)&space;&plus;&space;u(x,y-h)&space;&plus;&space;u(x,y&plus;h)&space;-&space;4&space;u(x,y)&space;\right)&space;/&space;h^2" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\nabla^2&space;u(x,y)&space;\approx&space;\left(&space;u(x-h,y)&space;&plus;&space;u(x&plus;h,y)&space;&plus;&space;u(x,y-h)&space;&plus;&space;u(x,y&plus;h)&space;-&space;4&space;u(x,y)&space;\right)&space;/&space;h^2" title="\nabla^2 u(x,y) \approx \left( u(x-h,y) + u(x+h,y) + u(x,y-h) + u(x,y+h) - 4 u(x,y) \right) / h^2" /></a>.  
+
+Setting this to zero, discretizing (evaluating on a grid) the solution so that <a href="https://www.codecogs.com/eqnedit.php?latex=u_{ij}&space;=&space;u(i&space;h-\pi,&space;j&space;h-\pi)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?u_{ij}&space;=&space;u(i&space;h-\pi,&space;j&space;h-\pi)" title="u_{ij} = u(i h-\pi, j h-\pi)" /></a> (with <a href="https://www.codecogs.com/eqnedit.php?latex=h=2\pi/(N-1)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?h=2\pi/(N-1)" title="h=2\pi/(N-1)" /></a> for *N* grid points including those on the boundary), and interpreting the equation as a fixed point iteration yields (with *n* as the iteration index)
+
+<a href="https://www.codecogs.com/eqnedit.php?latex=u^{n&plus;1}_{i,j}&space;=&space;\left(u^n_{i-1,j}&space;&plus;&space;u^n_{i&plus;1,j}&space;&plus;&space;u^n_{i,j-1}&space;&plus;&space;u^n_{i,j&plus;1}&space;\right)/4" target="_blank"><img src="https://latex.codecogs.com/gif.latex?u^{n&plus;1}_{i,j}&space;=&space;\left(u^n_{i-1,j}&space;&plus;&space;u^n_{i&plus;1,j}&space;&plus;&space;u^n_{i,j-1}&space;&plus;&space;u^n_{i,j&plus;1}&space;\right)/4" title="u^{n+1}_{i,j} = \left(u^n_{i-1,j} + u^n_{i+1,j} + u^n_{i,j-1} + u^n_{i,j+1} \right)/4" /></a>
 
 Overrelaxation tries to accelerate convergence by taking a bigger step.
 
-$u^{n+1}_{i,j) \leftarrow u^{n+1}_{i,j) + \omega \left(u^{n+1}_{i,j) - u^{n}_{i,j) \right)$
+<a href="https://www.codecogs.com/eqnedit.php?latex=u^{n&plus;1}_{i,j}&space;\leftarrow&space;u^{n&plus;1}_{i,j}&space;&plus;&space;\omega&space;\left(u^{n&plus;1}_{i,j}&space;-&space;u^{n}_{i,j}&space;\right)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?u^{n&plus;1}_{i,j}&space;\leftarrow&space;u^{n&plus;1}_{i,j}&space;&plus;&space;\omega&space;\left(u^{n&plus;1}_{i,j}&space;-&space;u^{n}_{i,j}&space;\right)" title="u^{n+1}_{i,j} \leftarrow u^{n+1}_{i,j} + \omega \left(u^{n+1}_{i,j} - u^{n}_{i,j} \right)" /></a>
 
-The program chooses the optimum value for $\omega$ for each grid spacing.
+The program chooses the optimum value for <a href="https://www.codecogs.com/eqnedit.php?latex=\omega" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\omega" title="\omega" /></a> for each grid spacing.
 
 This iteration rapidly damps high-frequency errors but is very slow at eliminating low-frequency errors.  Since low-frequencies on a fine mesh appear as high-frequency on a coarse mesh, modern solvers use multigrid techniques (and more powerful iterative techniques) to cycle between fine and coarse meshes to greatly accelerate convergence.  We stop short of the complexity of a full multigrid solver and only solve on a sequence of increasingly fine meshes.
 
