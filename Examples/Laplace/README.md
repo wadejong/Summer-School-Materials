@@ -7,7 +7,16 @@ more efficient modern solvers exist.  However, we use this iteration
 since the code is simple and it nicely illustrates use of the point-to-point
 communication routines in MPI.
 
-On the square domain $\Omega=[-\pi,\pi]^2$ we wish to solve Laplace's equation $\nabla^2 u(x,y) = 0$ subject to the boundary conditions $u(x,y)=f(x,y)$ for $(x,y)\in\partial\Omega$ (i.e., on the edges of the square). We approximate the Laplacian using a standard stencil $\nabla^2 u(x,y) \approx \left( u(x-h,y) + u(x+h,y) + u(x,y-h) + u(x,y+h) - 4 u(x,y) \right) / h^2.  Setting this to zero, discretizing (evaluating on a grid) the solution so that $u_{ij} = u(i h-\pi, j h-\pi)$ (with $h=2\pi/(N-1)$ for N grid points including those on the boundary), and interpreting the equation as a fixed point iteration yields (with $n$ as the iteration index)
+On the square domain <a href="https://www.codecogs.com/eqnedit.php?latex=\Omega=[-\pi,\pi]^2" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\Omega=[-\pi,\pi]^2" title="\Omega=[-\pi,\pi]^2" /></a>
+we wish to solve Laplace's equation 
+
+<a href="https://www.codecogs.com/eqnedit.php?latex=\nabla^2&space;u(x,y)&space;=&space;0" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\nabla^2&space;u(x,y)&space;=&space;0" title="\nabla^2 u(x,y) = 0" /></a>
+
+subject to the boundary conditions 
+
+<a href="https://www.codecogs.com/eqnedit.php?latex=u(x,y)=f(x,y)\&space;\mbox{for}\&space;(x,y)\in\partial\Omega" target="_blank"><img src="https://latex.codecogs.com/gif.latex?u(x,y)=f(x,y)\&space;\mbox{for}\&space;(x,y)\in\partial\Omega" title="u(x,y)=f(x,y)\ \mbox{for}\ (x,y)\in\partial\Omega" /></a> (i.e., on the edges of the square). 
+
+We approximate the Laplacian using a standard stencil $\nabla^2 u(x,y) \approx \left( u(x-h,y) + u(x+h,y) + u(x,y-h) + u(x,y+h) - 4 u(x,y) \right) / h^2.  Setting this to zero, discretizing (evaluating on a grid) the solution so that $u_{ij} = u(i h-\pi, j h-\pi)$ (with $h=2\pi/(N-1)$ for N grid points including those on the boundary), and interpreting the equation as a fixed point iteration yields (with $n$ as the iteration index)
 
 $u^{n+1}_{i,j) = \left(u^n(i-1,j) + u^n(i+1,j) + u^n(i,j-1) + u^n(i,j+1) \right)/4$
 
