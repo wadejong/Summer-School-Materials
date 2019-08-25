@@ -50,6 +50,8 @@ Note that MPI is initialized to let it know we might be using threads but that o
 
 With `NGRID=3844` these are timings from the four socket `sn-mem` SkyLake node (with the evironment variable `I_MPI_PIN_DOMAIN=socket` to bind all threads from an MPI process to the same socket).  The time is the operation time that includes the time taken for exchanging data (i.e., the communication cost).
 
+There's lots of noise in the timing, especially for the higher thread counts.
+
 P=#MPI processes
 
 T=#OMP threads per process
@@ -93,7 +95,7 @@ Efficiency = Speedup/(P*T)
 
 
 
-The following times are without binding threads to a socket.  This enables a single process OpenMP to access the full memory bandwidth of the system. The largest mesh at 118 MBytes is much larger than the L2 or L3 caches, and hence this application is limited by memory bandwidth.  Comparing the below with the above times, you can see that about 4 threads start to saturate the single-socket memory bandwidth. Also used `OMP_PROC_BIND=spread`.
+The following times are without binding threads to a socket.  This enables a single OpenMP process to access the full memory bandwidth of the system. The largest mesh at 118 MBytes is much larger than the L2 or L3 caches, and hence this application is limited by memory bandwidth.  Comparing the below with the above times, you can see that about 4 threads start to saturate the single-socket memory bandwidth. Also used `OMP_PROC_BIND=spread`.
 
 |  P  |  T  | Time(s) | Speedup | Efficiency |
 |-----|-----|---------|---------|------------|
