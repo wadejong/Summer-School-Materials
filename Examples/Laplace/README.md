@@ -1,10 +1,8 @@
 # Solution of Laplace's equation on a 2D mesh --- MPI+OpenMP+SIMD
 
 This program solves Laplace's equation in 2D using a 5-point stencial
-and the now old-fashioned and inefficient Gauss-Seidel
-(https://en.wikipedia.org/wiki/Gauss%E2%80%93Seidel_method) or
-successive over relaxation (SSOR;
-https://en.wikipedia.org/wiki/Successive_over-relaxation) method --- much
+and the now old-fashioned and inefficient [Gauss-Seidel](https://en.wikipedia.org/wiki/Gauss%E2%80%93Seidel_method) or
+successive over relaxation ([SSOR](https://en.wikipedia.org/wiki/Successive_over-relaxation)) method --- much
 more efficient modern solvers exist.  However, we use this iteration
 since the code is simple and it nicely illustrates use of the point-to-point
 communication routines in MPI.
