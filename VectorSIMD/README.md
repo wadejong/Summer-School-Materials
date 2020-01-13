@@ -399,10 +399,10 @@ A modern SIMD processor would compute a vector (mask) of boolean (bit) flags
 ~~~
 and the actual computation becomes a single predicated vector operation
 ~~~
-   FMA(mask, b, 10, c, a) --- where mask is true compute b*10+c and put result in a
+   FMA(mask, b, 10.0, c, a) --- where mask is true compute b*10.0+c and put result in a
 ~~~
 
-Before we had predicated vector instructions, the compiler had to do a lot more work to produce vector code which was also much slower.  As a result, lots of loops were just marked unvectorizable either because the compiler could not figure it out or it did not seem worthwhile.  Nowadays, most simple predicates are vectorizable.
+Nowadays, most simple predicates are vectorizable.  Before we had predicated vector instructions, the compiler had to do a lot more work to produce vector code which was also much slower.  As a result, lots of loops were just marked unvectorizable either because the compiler could not figure it out or it did not seem worthwhile. 
 
 Examples of AVX512 operations:
 
@@ -414,8 +414,27 @@ Examples of AVX512 operations:
 
 Fortunately, we humans no longer need to write in assembly language.
 
+### 6.3 Gather and scatter
 
-### 6.3 Memory alignment
+If in the previous example loop we only needed to operate on very few elements the predicated approach could become inefficient since it would be moving a lot of data that is ultimately never used.  Instead, one could gather the active data into a contiguous block, operate on it efficiently, and then scatter the results back. This is a performance win if the cost of gather+scatter is offset by speeding up the actual computation.  If the underlying data is non-contiguous this approach is required for vectorization on SIMD processors.   The above loop would then be replaced with
+
+~~~
+   double tmpa[n],tmpb[n],tmpc[n];
+   int index[n];
+   int count = 0;
+   for (i=0; i<n; i++) if (a[i]<10) index[count++] = i; // some compilers/hardware might be able to vectorize this
+   for (i=0; i<count; i++) tmpb[i] = b[index[i]]; // gather b
+   for (i=0; i<count; i++) tmpc[i] = c[index[i]]; // gather c
+   for (i=0; i<count; i++) tmpa[i] = tmpb[i]*10.0+tmpc[b]; // vectorized operation on contiguous data
+#pragma ivdep
+   for (i=0; i<count; i++) a[index[i]] = tmpa[i]; // scatter a --- the pragma is needed to assert no write dependency
+~~~
+For this inexpensive operation gather+scatter would not be a win.
+
+Historically, vector supercomputers such as those from Cray, NEC, Fujitsu, etc., had powerful gather+scatter capabilities, but modern SIMD processors only recently got limited hardware support.  Presently, it is not super efficient and might only offer a speedup for data within the same cacheline or by reducing costs associated with instruction decode or address calculation. 
+
+
+### 6.4 Memory alignment
 
 Historically, a load into vector register of width *W* bytes could only be performed from memory addresses that were appropriately aligned (usually on an address that was a multiple of *W*).  Subsequently, one could perform unaligned loads but only with a severe performance penalty.  Most recently, unaligned loads suffer a much lower peformance impact, but there can still benefit from aligning data.
 
@@ -429,13 +448,13 @@ Reference
 
 
 
-### 6.4 Pipelined SIMD
+### 6.5 Pipelined SIMD
 
 A factor of *L\*W* speedup compared to serial code.
 
 
 
-### 6.5 Exercises
+### 6.6 Exercises
 
 **Exercise:** what is the peak spead (operations/element/cycle) of a single, piplelined, SIMD functional unit with width *W=8* and latency *L=3*? 8.
 
@@ -531,7 +550,7 @@ Theoretical peak speed on Skylake --- in one cycle can issue
 * loop counter increment
 * test and branch
 
-So the entire loop can be written to execute in just one cycle, so the challenge is actually getting data from cache/memory to the processor.  This would be a throughput of 0.125 cyles/element.  CBLAS best is 0.163, likely due to the L1 cache not being able to sustain the peak speed due to bank conflicts.
+So the entire loop can be written to execute in just one cycle, so the challenge is actually getting data from cache/memory to the processor.  This would be a throughput of 0.125 cyles/element.  CBLAS best is 0.163, likely due to the L1 cache not being able to sustain the peak speed due to conflicts.
 
 For small vector lengths we are dominated by overheads (loop, call, timing, ...).  On the figure we see break points at ~2K, ~60K, ~1M.
 * L1 cache (private to each core) can, at least in theory, support full-speed memory access.  Also, the L1 cache is 32KB or 2048*16bytes (we have 2 d.p. vectors, so 2028 is the maximum we can fit, but in practice collisions will mean less fits).
