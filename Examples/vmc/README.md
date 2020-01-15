@@ -8,13 +8,11 @@ The classic Hylleraas wavefunction for the helium atom is
 
 We want to compute *\<r1\>*, *\<r2\>*, *\<r12\>* where
 
-~~~
-   <f> = integral( f(r1,r2,r12) * psi(r1,r2,r12)^2 dx1 dy1 dz1 dx2 dy2 dz2) / N
-~~~
+<a href="https://www.codecogs.com/eqnedit.php?latex=<f>&space;=&space;\frac{1}{N}\int&space;f(r_1,r_2,r_{12})\psi(r_1,r_2,r_{12})^2&space;dx_1&space;dy_1&space;dz_1&space;dx_2&space;dy_2&space;dz_2" target="_blank"><img src="https://latex.codecogs.com/gif.latex?<f>&space;=&space;\frac{1}{N}\int&space;f(r_1,r_2,r_{12})\psi(r_1,r_2,r_{12})^2&space;dx_1&space;dy_1&space;dz_1&space;dx_2&space;dy_2&space;dz_2" title="<f> = \frac{1}{N}\int f(r_1,r_2,r_{12})\psi(r_1,r_2,r_{12})^2 dx_1 dy_1 dz_1 dx_2 dy_2 dz_2" /></a>
 
 where *N* is the constant that square normalizes *psi*.
 
-This is performed using the Metropolis algorithm that interprets *p=psi^2* as an unormalized probability distribution.  Points are asymptotically sampled from the distribution p() as follows
+This is performed using the Metropolis algorithm that interprets <a href="https://www.codecogs.com/eqnedit.php?latex=p&space;=&space;\psi^2" target="_blank"><img src="https://latex.codecogs.com/gif.latex?p&space;=&space;\psi^2" title="p = \psi^2" /></a> as an unormalized probability distribution.  Points are asymptotically sampled from the distribution p() as follows
 
 1. initialize vectors *r1* and *r2* and compute *p=psi^2*, then repeat steps 2 and 3
 
