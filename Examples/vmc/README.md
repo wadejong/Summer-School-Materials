@@ -3,9 +3,8 @@ This program computes expectation values (6D integrals) associated with the heli
 Define *r1*, *r2*, and *r12* to be the distances of the electrons from the nucleus and from each other. 
 
 The classic Hylleraas wavefunction for the helium atom is
-~~~
-   psi(r1,r2,r12) = (1 + 0.5*r12) * exp(-2*(r1+r2))
-~~~
+
+<a href="https://www.codecogs.com/eqnedit.php?latex=\psi(r_1,r_2,r_{12})&space;=&space;(1&space;&plus;&space;\frac{1}{2}&space;r_{12})&space;\exp(-2(r_1&plus;r_2))" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\psi(r_1,r_2,r_{12})&space;=&space;(1&space;&plus;&space;\frac{1}{2}&space;r_{12})&space;\exp(-2(r_1&plus;r_2))" title="\psi(r_1,r_2,r_{12}) = (1 + \frac{1}{2} r_{12}) \exp(-2(r_1+r_2))" /></a>
 
 We want to compute *<r1>*, *<r2>*, *<r12>* where
 
