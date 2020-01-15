@@ -6,7 +6,7 @@ The classic Hylleraas wavefunction for the helium atom is
 
 <a href="https://www.codecogs.com/eqnedit.php?latex=\psi(r_1,r_2,r_{12})&space;=&space;(1&space;&plus;&space;\frac{1}{2}&space;r_{12})&space;\exp(-2(r_1&plus;r_2))" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\psi(r_1,r_2,r_{12})&space;=&space;(1&space;&plus;&space;\frac{1}{2}&space;r_{12})&space;\exp(-2(r_1&plus;r_2))" title="\psi(r_1,r_2,r_{12}) = (1 + \frac{1}{2} r_{12}) \exp(-2(r_1+r_2))" /></a>
 
-We want to compute *<r1>*, *<r2>*, *<r12>* where
+We want to compute *\<r1\>*, *\<r2\>*, *\<r12\>* where
 
 ~~~
    <f> = integral( f(r1,r2,r12) * psi(r1,r2,r12)^2 dx1 dy1 dz1 dx2 dy2 dz2) / N
