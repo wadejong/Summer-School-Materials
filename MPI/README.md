@@ -9,7 +9,7 @@
 1.  Review of the 6-8 essential MPI operations
 1.  Communicators and groups
 1.  Reasoning about performance
-1   Work distribution strategies
+1.   Work distribution strategies
 1.  Debugging, etc.
 1.  Additional material
 1.  Exercises
