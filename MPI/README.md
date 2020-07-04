@@ -549,7 +549,7 @@ There are some powerful visual parallel debuggers that understand MPI, but since
 
 * partitioning the iterations of an outer loop (see [`exercises/trapezoid_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/MPI/exercises/trapezoid_seq.cc) and parallel version)
 * using a counter to distribute the iterations of a nest of loops (see [`exercises/nest_seq.cc`](https://github.com/wadejong/Summer-School-Materials/blob/master/MPI/exercises/nest_seq.cc) and parallel veersion)
-* master slave model
+* manager-worker model
 * replicated vs. distributed data
 * systolic loop
 * parallel matrix multiplication ([here](http://www.cs.utexas.edu/~flame/pubs/SUMMA2d3dTOMS.pdf) and [here](https://www3.nd.edu/~zxu2/acms60212-40212/Lec-07-3.pdf)) is not as easy as you might think
