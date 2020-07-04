@@ -414,7 +414,7 @@ To combines values from all processes with a reduction operation either to just 
 * `sendbuf` --- a pointer to the buffer that contains the local data to be reduced
 * `recvbuf` --- a pointer to the buffer that will hold the result
 
-There are many pre-defined reduction operation and you can also define your own
+There are many pre-defined reduction operations and you can also define your own
 
 |**Operation** | Description | Datatype|
 |:-------------|:------------|:--------|
