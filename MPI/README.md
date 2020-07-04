@@ -507,7 +507,7 @@ For these reasons the concepts of strong and weak scaling were introduced.
 
 ### Load, data balance and hot spots
 
-Further limiting performance is the assumption of perfect parallelism.  It can be very hard to distribute work (a.k.a. load balance) across all of the processes.  For some applications, work is entirely driven by the data but this is not always the case.  A process that has too much work is sometimes referred to as a hot spot (also used to refer to a compute-intensive block of code).
+Further limiting performance is the assumption of perfect parallelism.  It can be very hard to distribute work uniformly (a.k.a. load balance) across all of the processes.  For some applications, work is entirely driven by the data but this is not always the case.  A process that has too much work is sometimes referred to as a hot spot (also used to refer to a compute-intensive block of code).
 
 Data distribution can also be a challenge.  The finite memory of each node is one constraint.  Another is that all of the data needed by a task must be brought together for it to be executed.  A non-uniform data distribution can also lead to communication hot spots (processors that must send/recv a lot of data) or hot links (wires in the network that are heavily used to transmit data).  This last point highlights the role of network topology --- the communication pattern of your application is mapped onto the wiring pattern (toplogy) of your network.  A communication intensive application may be sensive to this mapping, and MPI provides some assistance for this (e.g., see [here](http://wgropp.cs.illinois.edu/courses/cs598-s16/lectures/lecture28.pdf)).  See also bisection bandwidth below.
 
