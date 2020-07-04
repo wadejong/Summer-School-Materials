@@ -180,7 +180,7 @@ We used four processes on the local machine (e.g., your laptop or the cluster lo
 * queue jobs according to priority, resource needs, etc.
 
 
-Here's an example batch job ([`exercises/mpihello.sbatch`](https://github.com/wadejong/Summer-School-Materials/blob/master/MPI/exercises/mpihello.sbatch)) for SeaWulf annotated so show what is going on (this is for SLURM ---  look at the `*.pbs` version for PBS/Torque):
+Here's an example batch job ([`exercises/mpihello.sbatch`](https://github.com/wadejong/Summer-School-Materials/blob/master/MPI/exercises/mpihello.sbatch)) for SeaWulf annotated to show what is going on (this is for SLURM ---  look at the `*.pbs` version for PBS/Torque):
 ~~~
      #!/bin/bash
      #SBATCH --nodes=2 --tasks-per-node=40 --cpus-per-task=1 --time=00:05:00 --job-name=test -p debug-40core
