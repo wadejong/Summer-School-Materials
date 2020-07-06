@@ -2,7 +2,7 @@ Incremental construction of the OpenMP version
 
 How to parallelize this?  We could do it the same way as the MPI version but it would be nice to explore other alternatives.
 
-Also, if we do it differently to MPI (explicitly if we can exploit finer grain parallelism) then perhaps we can make more easily make an efficient hybrid OpenMP+MPI program.
+Also, if we do it differently to MPI (explicitly if we can exploit finer grain parallelism) then perhaps we can more easily make an efficient hybrid OpenMP+MPI program.
 
 In the MPI program we parallelized the outer loop of the neighborlist generation, so in this code perhaps we could parallelize both loops. But what does this mean about threads adding into a shared force vector?  What are the implications about increased memory traffic as multiple threads read the data? What about caches shared by multiple threads or cache coherency traffic between different caches? 
 
