@@ -37,7 +37,7 @@ This lines up perfectly (!) with the ratio of their peak speeds, which are
 Skylake machine.
 
 Conclusion: 
-* This benchmark can obtain close to peak performance on both machines
+* This benchmark has performance that tracks the peak performance on both machines
 * A fair comparison of machines requires careful attention to optimizing the software on each platform, which can take a lot of work.
 
 
